@@ -53,11 +53,21 @@ class glitch():
 
     MAX_CHUNK = 300
 
-    def __init__(self, path):
-        """Given filepath to image, initialize glitchable object"""
-        self.data = self.read_from_file(path)
-        # set name of file with call to `basename`
-        self.name = subprocess.check_output("basename {}".format(path), shell=True).strip()
+    def __init__(self, path, from_file=False):
+        """Given path to image (local file or URL), initialize glitchable object"""
+        if from_file:
+            self.data = self.read_from_file(path)
+            # set name of file with call to `basename`
+            self.name = subprocess.check_output("basename {}".format(path), shell=True).strip()
+
+        # if not from_file, path is a URL to image online
+        else:
+            self.data = requests.get(path).content
+            # use regex to extract name for image from end of URL
+            # (actually, this should also work instead of basename above...)
+            self.name = re.sub('^.*/([^/]*)$', r'\1', path)
+            # self.name = '{}.jpg'.format( re.sub( '\+', '_', re.sub( '^.*&text=([^&]*)&.*$', r'\1', path ) ) )
+
         self.change_log = []
         self.glitchname = re.sub('(\.[^\.]*)$', r'.glitched\1', self.name) # add '.glitched' before file suffix
 
@@ -70,7 +80,13 @@ class glitch():
             '\n'.join(self.change_log) + '\n'
 
 
-    def write_to_file(self, outdir, launch_in_browser=True):
+    def read_from_file(self, path_to_file):
+        """Read in image data from local file"""
+        with open(path_to_file, "r") as file_in:
+            return file_in.read()
+
+
+    def write_to_file(self, outdir, pop_open=True):
         """Write glitch art to file"""
         outfile = outfile_path(outdir, self.glitchname)
 
@@ -82,15 +98,9 @@ class glitch():
         # After printing to file, remove this line from changelog to reset for future files
         self.change_log = self.change_log[:-1]
 
-        if launch_in_browser:
+        if pop_open:
             webbrowser.get("open -a /Applications/Google\ Chrome.app %s")\
                 .open('file://localhost{}'.format(outfile), new=2) # open in new tab, if possible
-
-
-    def read_from_file(self, path_to_file):
-        """Read in image data from local file"""
-        with open(path_to_file, "r") as file_in:
-            return file_in.read()
 
 
     def _random_chunk(self, max_chunk = MAX_CHUNK):
@@ -128,28 +138,51 @@ class glitch():
                             .format(b - a, a, b, n))
 
 
-###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
+
+class flickr_browse():
+    """Access images using Flickr API"""
+    _API_KEY='6fb8c9ee707ff3eb8c610d4bfba9ddaf'
+
+    def __init__(self, text=''):
+        if text:
+            self.title = re.sub(' ', '_', text)
+            # get random images matching given keyword using Flickr's API
+            curled = subprocess.check_output("curl \
+            'https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key={}&text={}&format=json&nojsoncallback=1'\
+            ".format(self._API_KEY, re.sub(' ', '+', text)), shell = True)
+            # create hit list from returned json, ignored header text
+        else:
+            # TO DO: other ways to search flickr? (by geotag, etc)
+            pass
+        self.l_hits = [ img.split(",") for img in curled.split('{') ][3:]
 
 
-def flickr_hit(keywd):
-    """Use keyword to download random image hit from Flickr API and return local path to image"""
-    API_KEY='6fb8c9ee707ff3eb8c610d4bfba9ddaf'
-    # get random images matching given keyword using Flickr's API
-    curled = subprocess.check_output("curl 'https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key={}&text={}&format=json&nojsoncallback=1'".format(API_KEY, keywd), shell = True)
-    # select random hit from among top hits
-    random_hit = random.choice( [ img.split(",") for img in curled.split('{') ][3:] )
-    # use hit data to initialize dictionary of image data and construct image URL
-    d_hit = dict( tuple( txt.strip('"') for txt in elem.split(':')[:2] ) for elem in random_hit if len(elem)>0 )
-    hit_url = 'https://farm{}.staticflickr.com/{}/{}_{}.jpg'\
+    def random(self, pop_open=True, write=False):
+        """Returns random hit from among list of hits"""
+        random_hit = random.choice(self.l_hits)
+        # parse hit for relevant data and use to contruct image URL
+        d_hit = dict( tuple( txt.strip('"') for txt in elem.split(':')[:2] ) \
+                      for elem in random_hit if len(elem)>0 )
+        hit_url = 'https://farm{}.staticflickr.com/{}/{}_{}.jpg'\
               .format( *( d_hit[key] for key in ['farm','server','id','secret'] ) )
-    # download image
-    outfile = outfile_path( PATH_OUT, '{}.jpg'.format(d_hit['id']) )
-    with open(outfile, "w") as file_out:
-        file_out.write( requests.get(hit_url).content )
-    return outfile
+
+        if pop_open:
+            # open in new Chrome tab
+            webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(hit_url, new=2)
+
+        if write:
+            # write image data to file in directory specified by global var PATH_OUT
+            outfile = outfile_path( PATH_OUT, '{}.jpg'.format(d_hit['id']) )
+            with open(outfile, "w") as file_out:
+                file_out.write( requests.get(hit_url).content )
+
+        return hit_url
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 
 
 def outfile_path(path_to_dir, filename):
@@ -173,20 +206,31 @@ def outfile_path(path_to_dir, filename):
     return '{}/{}'.format(path_to_dir, filename)
 
 
+def doWork():
+    IMG_IN = flickr_browse(KEY)
+    # five random images from flickr search
+    for i in xrange(5):
+        x = glitch(IMG_IN.random(write = True))
+        # five rounds of attempts to create glitch art per image
+        for i in xrange(5):
+            # three rounds of glitching per glitched image
+            for j in xrange(3):
+                x.digit_increment(max_chunk = 1000, max_n=4)
+                x.genome_rearrange()
+            x.write_to_file(PATH_OUT)
+
+
 ###############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################
 
-KEY = 'australia'
+KEY = 'new york city'
 #IMG_IN = '/Users/miriamshiffman/Desktop/Pics/Mir/IMG_0869.jpg'
-PATH_OUT = '/Users/miriamshiffman/Downloads/'
-IMG_IN = flickr_hit(KEY)
+PATH_OUT = '/Users/miriamshiffman/Downloads/glitched'
+#IMG_IN = flickr_hit(KEY)
 
 
 if __name__ == '__main__':
-    x = glitch(IMG_IN)
-    for i in xrange(3):
-        x.digit_increment(max_chunk = 1000, max_n=4)
-        x.genome_rearrange()
-    x.write_to_file(PATH_OUT)
+    for i in xrange(5):
+        doWork()
