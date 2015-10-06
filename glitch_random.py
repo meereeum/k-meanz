@@ -41,6 +41,7 @@ import glob
 import code
 import webbrowser
 import requests
+import pprint
 #from bs4 import BeautifulSoup
 
 ###############################################################################
@@ -145,15 +146,27 @@ class flickr_browse():
 
     def __init__(self, text=''):
         if text:
-            self.title = re.sub(' ', '_', text)
             # get random images matching given keyword using Flickr's API
+            # construct dictionary of arguments and use to construct URL to curl
+            d_args = { 'api_key': self._API_KEY, \
+                       'format': 'json', \
+                       'nojsoncallback': '1', \
+                       # safe search off
+                       'safe_search': '3', \
+                       # sort by mysterious flickr algorithm for 'interestingness'
+                       'sort': 'interestingness-desc', \
+                       # maximum number of search results
+                       'per_page': '500', \
+                       # text to search (all fields)
+                       'text': re.sub(' ', '+', text) }
+            args = ''.join( '&{}={}'.format(k,v) for k,v in d_args.items() )
             curled = subprocess.check_output("curl \
-            'https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key={}&text={}&format=json&nojsoncallback=1'\
-            ".format(self._API_KEY, re.sub(' ', '+', text)), shell = True)
-            # create hit list from returned json, ignored header text
+            'https://api.flickr.com/services/rest/?method=flickr.photos.search{}'"\
+                                             .format(args), shell = True)
+        # TO DO: other ways to search flickr? (by geotag, etc)
         else:
-            # TO DO: other ways to search flickr? (by geotag, etc)
             pass
+        # create hit list from returned json, ignoring header text
         self.l_hits = [ img.split(",") for img in curled.split('{') ][3:]
 
 
@@ -161,8 +174,8 @@ class flickr_browse():
         """Returns random hit from among list of hits"""
         random_hit = random.choice(self.l_hits)
         # parse hit for relevant data and use to contruct image URL
-        d_hit = dict( tuple( txt.strip('"') for txt in elem.split(':')[:2] ) \
-                      for elem in random_hit if len(elem)>0 )
+        d_hit = dict( t for t in ( tuple( txt.strip('"') for txt in elem.split(':') ) \
+                                  for elem in random_hit ) if len(t) == 2 )
         hit_url = 'https://farm{}.staticflickr.com/{}/{}_{}.jpg'\
               .format( *( d_hit[key] for key in ['farm','server','id','secret'] ) )
 
@@ -208,10 +221,11 @@ def outfile_path(path_to_dir, filename):
 
 def doWork():
     IMG_IN = flickr_browse(KEY)
-    # five random images from flickr search
+    #code.interact(local=locals())
+    # five random images from flickr search as seeds
     for i in xrange(5):
-        x = glitch(IMG_IN.random(write = True))
-        # five rounds of attempts to create glitch art per image
+        x = glitch( IMG_IN.random(write = True) )
+        # five rounds of attempts to incrementally create glitch art per image
         for i in xrange(5):
             # three rounds of glitching per glitched image
             for j in xrange(3):
@@ -232,5 +246,4 @@ PATH_OUT = '/Users/miriamshiffman/Downloads/glitched'
 
 
 if __name__ == '__main__':
-    for i in xrange(5):
-        doWork()
+   doWork()
