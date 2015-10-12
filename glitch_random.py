@@ -38,11 +38,10 @@ import random
 import subprocess
 import re
 import glob
-import code
+#import code
 import webbrowser
 import requests
-import pprint
-#from bs4 import BeautifulSoup
+import PIL
 
 ###############################################################################
 ###############################################################################
@@ -56,7 +55,9 @@ class glitch():
 
     def __init__(self, path, from_file=False):
         """Given path to image (local file or URL), initialize glitchable object"""
-        if from_file:
+        self.path = path
+        self.from_file = from_file
+        if self.from_file:
             self.data = self.read_from_file(path)
             # set name of file with call to `basename`
             self.name = subprocess.check_output("basename {}".format(path), shell=True).strip()
@@ -64,14 +65,13 @@ class glitch():
         # if not from_file, path is a URL to image online
         else:
             self.data = requests.get(path).content
-            # use regex to extract name for image from end of URL
-            # (actually, this should also work instead of basename above...)
-            self.name = re.sub('^.*/([^/]*)$', r'\1', path)
-            # self.name = '{}.jpg'.format( re.sub( '\+', '_', re.sub( '^.*&text=([^&]*)&.*$', r'\1', path ) ) )
+            # use regex to extract name (id) for image from end of URL
+            # after final backslash (greedy match) but before '_'
+            self.name = '{}.jpg'.format( re.sub(r'^.*/([^\_]*).*$', r'\1', path) )
 
         self.change_log = []
-        self.glitchname = re.sub('(\.[^\.]*)$', r'.glitched\1', self.name) # add '.glitched' before file suffix
-
+        # add '.glitched' before file suffix
+        self.glitchname = re.sub('(\.[^\.]*)$', r'.glitched\1', self.name)
 
     def __repr__(self):
         """Print image name and description of changes (glitches, any output to file)"""
@@ -102,6 +102,20 @@ class glitch():
         if pop_open:
             webbrowser.get("open -a /Applications/Google\ Chrome.app %s")\
                 .open('file://localhost{}'.format(outfile), new=2) # open in new tab, if possible
+
+
+    def reload(self):
+        """Restarts glitch object from scratch (original source image and empty changelog)"""
+        self.__init__(path = self.path, from_file = self.from_file)
+        print '\n{}, looking fresh\n'.format(self.name)
+        print self.change_log
+
+
+    def is_broken(self):
+        # TODO: use PIL to check for broken images and stop glitching if already broken
+        # i.e. try/except with Image.open(<path>).verify()
+        # only perhaps find way to test image data itself without writing to file?
+        pass
 
 
     def _random_chunk(self, max_chunk = MAX_CHUNK):
@@ -219,19 +233,30 @@ def outfile_path(path_to_dir, filename):
     return '{}/{}'.format(path_to_dir, filename)
 
 
+def glitch_routine(globj):
+    """Given glitchable object (globject), applies several rounds of glitching and prints changes as files (and opens in tabs)"""
+    # five rounds of attempts to create glitch art per image (from scratch)
+    for i in xrange(5):
+        # three rounds of incremental glitching per glitched image
+        for j in xrange(3):
+            globj.digit_increment(max_chunk = 1000, max_n = 4)
+            globj.genome_rearrange() 
+            globj.write_to_file(PATH_OUT)
+        globj.reload()
+
+
+
 def doWork():
-    IMG_IN = flickr_browse(KEY)
-    #code.interact(local=locals())
+    hits = flickr_browse(KEY)
     # five random images from flickr search as seeds
     for i in xrange(5):
-        x = glitch( IMG_IN.random(write = True) )
-        # five rounds of attempts to incrementally create glitch art per image
-        for i in xrange(5):
-            # three rounds of glitching per glitched image
-            for j in xrange(3):
-                x.digit_increment(max_chunk = 1000, max_n=4)
-                x.genome_rearrange()
-            x.write_to_file(PATH_OUT)
+        rando = hits.random( write = True )
+        #glitch_routine( glitch(rando) )
+
+
+
+def doWork_file():
+    glitch_routine( glitch(IMG_IN, from_file = True) )
 
 
 ###############################################################################
@@ -240,10 +265,9 @@ def doWork():
 ###############################################################################
 
 KEY = 'new york city'
-#IMG_IN = '/Users/miriamshiffman/Desktop/Pics/Mir/IMG_0869.jpg'
+IMG_IN = '/Users/miriamshiffman/Downloads/screen-shot-2015-10-08-at-105557-am.png'
 PATH_OUT = '/Users/miriamshiffman/Downloads/glitched'
-#IMG_IN = flickr_hit(KEY)
 
 
 if __name__ == '__main__':
-   doWork()
+   doWork_file()
