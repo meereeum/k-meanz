@@ -41,7 +41,9 @@ import glob
 #import code
 import webbrowser
 import requests
-import PIL
+from PIL import Image
+from collections import Counter, defaultdict
+from StringIO import StringIO
 
 ###############################################################################
 ###############################################################################
@@ -87,7 +89,7 @@ class glitch():
             return file_in.read()
 
 
-    def write_to_file(self, outdir, pop_open=True):
+    def write_to_file( self, outdir, pop_open=True ):
         """Write glitch art to file"""
         outfile = outfile_path(outdir, self.glitchname)
 
@@ -151,6 +153,35 @@ class glitch():
 
         self.change_log.append('Digits in chunk of {} char ({} to {}) incremented by {}'\
                             .format(b - a, a, b, n))
+
+
+    #def pil_import(self):
+        #"""Read globj data into object that can be manipulated using Python Image Library and set relevant attributes"""
+        #self.img = Image.open(StringIO(self.data))
+        #self.size = self.img.size
+
+
+    def pixel_sort(self, by_dist=False):
+        """Sort pixels by frequency and, optionally, by Euclidean distance (within a given frequency)"""
+        # Read globj data into PIL Image object
+        self.img = Image.open(StringIO(self.data))
+        # Generate list of tuples representing pixel (R,G,B)s
+        pixels = [t for t in self.img.getdata()]
+        pixels_sorted = []
+        # Count pixel frequency, sorted from most to least common
+        #TODO: also sort by Euclidean distance (within each freq)
+        if not by_dist:
+            for pixel, n in Counter(pixels).most_common():
+                # Add each pixel to list of sorted pixels according to its frequency
+                pixels_sorted.extend([pixel]*n)
+        if by_dist:
+            def eucl_dist(p1, p2):
+                return sum( abs(x1-x2) for x1,x2 in zip(p1,p2) )
+            d = Counter(pixels)
+            #TODO: ordered defaultdict to sequentially add pixels to dictionary according to distance from random starting seed within each freq category?
+        self.new_img = Image.new(self.img.mode, self.img.size)
+        self.new_img.putdata(pixels_sorted)
+        self.new_img.show()
 
 
 
