@@ -182,12 +182,14 @@ class glitch():
         self.new_img = Image.new(self.img.mode, self.img.size)
         self.new_img.putdata(pixels_sorted)
         self.new_img.show()
+        self.change_log.append('Pixels sorted by frequency')
 
 
 
 class flickr_browse():
     """Access images using Flickr API"""
     _API_KEY='6fb8c9ee707ff3eb8c610d4bfba9ddaf'
+    BASE_URL='https://api.flickr.com/services/rest/?method=flickr.photos.search'
 
     def __init__(self, text=''):
         if text:
@@ -203,11 +205,10 @@ class flickr_browse():
                        # maximum number of search results
                        'per_page': '500', \
                        # text to search (all fields)
-                       'text': re.sub(' ', '+', text) }
+                       'text': text.replace(' ','+') }
             args = ''.join( '&{}={}'.format(k,v) for k,v in d_args.items() )
             curled = subprocess.check_output("curl \
-            'https://api.flickr.com/services/rest/?method=flickr.photos.search{}'"\
-                                             .format(args), shell = True)
+            '{}{}'".format( self.BASE_URL, args ), shell = True)
         # TO DO: other ways to search flickr? (by geotag, etc)
         else:
             pass
@@ -221,8 +222,12 @@ class flickr_browse():
         # parse hit for relevant data and use to contruct image URL
         d_hit = dict( t for t in ( tuple( txt.strip('"') for txt in elem.split(':') ) \
                                   for elem in random_hit ) if len(t) == 2 )
-        hit_url = 'https://farm{}.staticflickr.com/{}/{}_{}.jpg'\
-              .format( *( d_hit[key] for key in ['farm','server','id','secret'] ) )
+        # image sizes, in increasing order from small square (75x75)
+            # through large (1024 longest side)
+        sizes = ['s','t','m','z','b']
+        d_hit['size'] = sizes[-1]
+        hit_url = 'https://farm{}.staticflickr.com/{}/{}_{}_{}.jpg'\
+              .format( *( d_hit[key] for key in ['farm','server','id','secret','size'] ) )
 
         if pop_open:
             # open in new Chrome tab
