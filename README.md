@@ -16,11 +16,9 @@ d88E`"888E`   888R   ''888E`   8888    <888'888k  888E~?888L   888E  888I
  ^"===*"`                                            :"          ~`       
 
 ```
-#
-
 Glitch art generator: guaranteed to create glitched images, "art" not guaranteed
 
-
+# How to
 * Feed in local image file OR Flickr search keyword
 * Spits out sequentially glitched variations
 * Evaluate status as art (subjective)
