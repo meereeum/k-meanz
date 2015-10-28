@@ -97,7 +97,7 @@ class glitch():
             file_out.write(self.data)
             self.change_log.append('>>>>>>>>>>>>> {}'.format(file_out.name))
         print self
-
+        
         # After printing to file, remove this line from changelog to reset for future files
         self.change_log = self.change_log[:-1]
 
@@ -249,24 +249,20 @@ class flickr_browse():
 
 
 def outfile_path(path_to_dir, filename):
-    """Given directory and desired filename, returns path to outfile that will not
-    overwrite existing file/s by appending '_<i>' to filename"""
-    # remove trailing slash, if exists
-    path_to_dir = re.sub('/$', '', path_to_dir)
-
+    """Given directory and desired filename, returns path to outfile that will not overwrite existing file/s by appending '_<i>' to filename"""
     # only alter filename if necessary to avoid clobbering preexisting file
-    if glob.glob('{}/{}'.format(path_to_dir, filename)):
+    if glob.glob( os.path.join(path_to_dir, filename) ):
         i = 1
         # add '_<i>' before file suffix
         filename = re.sub('(\.[^\.]*)$', r'_{}\1'.format(i), filename)
         # continually check for pre-existing file
-        while glob.glob('{}/{}'.format(path_to_dir, filename)):
+        while glob.glob( os.path.join(path_to_dir, filename) ):
             # update i in filename
             filename = re.sub('_[0-9]*(\.[^\.]*)$', r'_{}\1'.format(i), filename)
             # ^^ 'r' for raw string to enable back-referencing
             i += 1
 
-    return '{}/{}'.format(path_to_dir, filename)
+    return os.path.join(path_to_dir, filename) 
 
 
 def glitch_routine(globj):
