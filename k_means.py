@@ -48,8 +48,14 @@ class kmeans():
         self.k = k
         self.pixelMap = self.img.load()
         #TODO: figure out how to sample from generator/iterable
-        self.pixels_xy = [ (x,y) for x in xrange(self.img.size[0]) for y in xrange(self.img.size[1]) ]
-        self.__initialize_k_dict__( random.sample( self.pixels_xy, self.k ) )
+        #self.pixels_xy = [ (x,y) for x in xrange(self.img.size[0]) for y in xrange(self.img.size[1]) ]
+        #self.__initialize_k_dict__( random.sample( self.pixels_xy, self.k ) )
+        self.k_lst = [ (random.randint(0, self.img.size[0]-1), random.randint(0, self.img.size[1]-1)) \
+                       for _ in xrange(self.k) ]
+        # check to see that two random k points are not identical
+        while len(set(self.k_lst)) < self.k:
+            self.k_lst.append( (random.randint(0, self.img.size[0]-1), random.randint(0, self.img.size[1]-1)) )
+        self.__initialize_k_dict__(self.k_lst)
 
 
     def __initialize_k_dict__(self, k_vals):
@@ -74,7 +80,7 @@ class kmeans():
     def assign_pixels(self, metric):
         """Assign all pixels in image to closest matching group in self.d_k_groups, according to given distance metric"""
         print 'assigning pixels'
-        for t in self.pixels_xy:
+        for t in ( (x,y) for x in xrange(0, self.img.size[0]) for y in xrange(0, self.img.size[1]) ):
             # convert (x, y) of pixel location to ((x, y), (r, g, b))
             tval = self.xy2xyrgb(t)
             # append to dictionary value list corresponding to key of k-mean that minimizes distance by given metric
@@ -118,8 +124,7 @@ def euclidean_dist(p1, p2):
     """Compute Euclidean distance between 2 pts of any (equal) dimensions
     IN: two iterables (tuples, lists)
     OUT: float"""
-    return sum( abs(x1-x2) for x1, x2 in zip(chain.from_iterable(p1), chain.from_iterable(p2)) )**0.5
-
+    return sum( abs(x1-x2) for x1, x2 in izip(chain.from_iterable(p1), chain.from_iterable(p2)) )**0.5
 
 
 # inspired by http://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
@@ -162,8 +167,14 @@ def random_color_palette(n, RGB=True):
     return [ hsv2rgb((h, SATURATION, VALUE)) for h in l_hues ]
 
 
-
-def implement(infile, k, warholize):
+@profile
+def implement(infile, k, warholize=False):
     x = kmeans(infile, k=k)
     x.assign_pixels(metric=euclidean_dist)
     x.generate_image(warholize=warholize)
+
+FILE_IN = '/Users/miriamshiffman/Desktop/Pics/Art/sc236393.jpg'
+K=40
+
+if __name__ == "__main__":
+    implement(FILE_IN, K)
