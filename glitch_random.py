@@ -34,13 +34,9 @@ __status__ = "Development"
 
 ###############################################################################
 
-import random
-import subprocess
-import re
-import glob
+import random, subprocess, re, glob, os
 #import code
-import webbrowser
-import requests
+import webbrowser, requests
 from PIL import Image
 from collections import Counter, defaultdict
 from StringIO import StringIO
@@ -59,6 +55,7 @@ class glitch():
         """Given path to image (local file or URL), initialize glitchable object"""
         self.path = path
         self.from_file = from_file
+
         if self.from_file:
             self.data = self.read_from_file(path)
             # set name of file with call to `basename`
@@ -74,6 +71,7 @@ class glitch():
         self.change_log = []
         # add '.glitched' before file suffix
         self.glitchname = re.sub('(\.[^\.]*)$', r'.glitched\1', self.name)
+
 
     def __repr__(self):
         """Print image name and description of changes (glitches, any output to file)"""
@@ -97,7 +95,7 @@ class glitch():
             file_out.write(self.data)
             self.change_log.append('>>>>>>>>>>>>> {}'.format(file_out.name))
         print self
-        
+
         # After printing to file, remove this line from changelog to reset for future files
         self.change_log = self.change_log[:-1]
 
@@ -247,7 +245,6 @@ class flickr_browse():
 ###############################################################################
 ###############################################################################
 
-
 def outfile_path(path_to_dir, filename):
     """Given directory and desired filename, returns path to outfile that will not overwrite existing file/s by appending '_<i>' to filename"""
     # only alter filename if necessary to avoid clobbering preexisting file
@@ -263,6 +260,7 @@ def outfile_path(path_to_dir, filename):
             i += 1
 
     return os.path.join(path_to_dir, filename) 
+
 
 
 def glitch_routine(globj):
@@ -283,7 +281,7 @@ def doWork():
     # five random images from flickr search as seeds
     for i in xrange(5):
         rando = hits.random( write = True )
-        #glitch_routine( glitch(rando) )
+        glitch_routine( glitch(rando) )
 
 
 
@@ -296,9 +294,9 @@ def doWork_file():
 ###############################################################################
 ###############################################################################
 
-KEY = 'new york city'
-IMG_IN = '/Users/miriamshiffman/Downloads/screen-shot-2015-10-08-at-105557-am.png'
-PATH_OUT = '/Users/miriamshiffman/Downloads/glitched'
+#KEY = 'new york city'
+#IMG_IN = '/Users/miriamshiffman/Downloads/screen-shot-2015-10-08-at-105557-am.png'
+#PATH_OUT = '/Users/miriamshiffman/Downloads/glitched'
 
 
 if __name__ == '__main__':
