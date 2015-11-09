@@ -24,3 +24,9 @@ Glitch art generator: guaranteed to create glitched images, "art" not guaranteed
 * Evaluate status as art (subjective)
     * If necessary, go back to step 1
 * Profit (in aesthetic pleasure)
+
+Usage:
+FILE MODE...
+```> python glitch_random.py file <path/to/file> <path/to/output/dir>```
+FLICKR MODE...
+```> python glitch_random.py flickr <keyword/s> <path/to/output/dir>```
