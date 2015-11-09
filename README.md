@@ -34,7 +34,9 @@ Flickr mode...
 
 ```> python glitch_random.py flickr <keyword/s> <path/to/output/dir>```
 
-#
+
+
+<a data-flickr-embed="true"  href="https://www.flickr.com/photos/102397924@N07/22890693172/in/dateposted-public/" title="4275970211_94e83b4602_b.glitched_5"><img src="https://farm1.staticflickr.com/625/22890693172_1987038b6b_c.jpg" width="800" height="800" alt="4275970211_94e83b4602_b.glitched_5"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
+
 e.g.
 ```> python glitch_random.py flickr david bowie .```
-<a data-flickr-embed="true"  href="https://www.flickr.com/photos/102397924@N07/22890693172/in/dateposted-public/" title="4275970211_94e83b4602_b.glitched_5"><img src="https://farm1.staticflickr.com/625/22890693172_1987038b6b_c.jpg" width="800" height="800" alt="4275970211_94e83b4602_b.glitched_5"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
