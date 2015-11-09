@@ -34,7 +34,7 @@ __status__ = "Development"
 
 ###############################################################################
 
-import random, subprocess, re, glob, os
+import random, subprocess, re, glob, os, sys
 #import code
 import webbrowser, requests
 from PIL import Image
@@ -108,7 +108,7 @@ class glitch():
         """Restarts glitch object from scratch (original source image and empty changelog)"""
         self.__init__(path = self.path, from_file = self.from_file)
         print '\n{}, looking fresh\n'.format(self.name)
-        print self.change_log
+        #print self.change_log
 
 
     def is_broken(self):
@@ -259,7 +259,7 @@ def outfile_path(path_to_dir, filename):
             # ^^ 'r' for raw string to enable back-referencing
             i += 1
 
-    return os.path.join(path_to_dir, filename) 
+    return os.path.join(path_to_dir, filename)
 
 
 
@@ -270,34 +270,75 @@ def glitch_routine(globj):
         # three rounds of incremental glitching per glitched image
         for j in xrange(3):
             globj.digit_increment(max_chunk = 1000, max_n = 4)
-            globj.genome_rearrange() 
-            globj.write_to_file(PATH_OUT)
+            globj.genome_rearrange()
+            globj.write_to_file(outdir=PATH_OUT)
         globj.reload()
+    # also implement pixel sort
+    globj.pixel_sort()
+    globj.write_to_file(outdir=PATH_OUT)
 
 
 
-def doWork():
-    hits = flickr_browse(KEY)
-    # five random images from flickr search as seeds
-    for i in xrange(5):
+def doWork_flickr(key, n):
+    hits = flickr_browse(text = key)
+    # n random images from flickr search as seeds
+    for i in xrange(n):
         rando = hits.random( write = True )
         glitch_routine( glitch(rando) )
 
 
 
-def doWork_file():
-    glitch_routine( glitch(IMG_IN, from_file = True) )
+def doWork_file(img_in):
+    glitch_routine( glitch(img_in, from_file = True) )
 
 
+
+def parse_args():
+    _USAGE = 'USAGE: python glitch_random.py [file, flickr] [ <path/to/file> OR <flickr keyword/s> ] [ <path/to/outdir> ]'
+    global PATH_OUT
+
+    #for i, thing in enumerate(sys.argv):
+        #print '{}) {}'.format(i, thing)
+#
+    #return
+
+    if len(sys.argv) == 1 or ( len(sys.argv) == 2 and sys.argv[1] in ('-h', '--help') ):
+        print _USAGE
+        return
+    if len(sys.argv) < 4:
+        raise Exception( '\n\n'.join(('Missing command-line arguments!', _USAGE)) )
+    input_arg = sys.argv[1].lower()
+    if input_arg not in ('file', 'flickr'):
+        raise Exception( '\n\n'.join(('Specify from "file" or "flickr" keyword!', _USAGE)) )
+
+    # specify last argument as outdir, since flickr keyword search might be >1 wd
+    PATH_OUT = sys.argv[-1]
+
+    if input_arg == 'file':
+        IMG_IN = sys.argv[2]
+        doWork_file(IMG_IN)
+
+    # otherwise, input must be keyword search of Flickr
+    else:
+        # convert multi-wd keyword search to single key string
+        KEY = ' '.join(sys.argv[2:-1])
+        doWork_flickr(KEY, 2)
+
+
+
 ###############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################
+
 
 #KEY = 'new york city'
 #IMG_IN = '/Users/miriamshiffman/Downloads/screen-shot-2015-10-08-at-105557-am.png'
 #PATH_OUT = '/Users/miriamshiffman/Downloads/glitched'
-
+#TODO: args to parse:
+# -f / --file_in OR -k / --flickr_key
+# -o / --outdir
+# glitch_random.py <file / flickr> <path/to/file OR flickr keyword> <outdir>
 
 if __name__ == '__main__':
-   doWork_file()
+    parse_args()
