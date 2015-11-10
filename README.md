@@ -39,6 +39,6 @@ Flickr mode...
 <a data-flickr-embed="true"  href="https://www.flickr.com/photos/102397924@N07/22890693172/in/dateposted-public/" title="4275970211_94e83b4602_b.glitched_5"><img src="https://farm1.staticflickr.com/625/22890693172_1987038b6b_c.jpg" width="800" height="800" alt="4275970211_94e83b4602_b.glitched_5"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
 
 
-```> python glitch_random.py file ./twin_peaks.jpg .```
 
+```> python glitch_random.py file ./twin_peaks.jpg .```
 <a data-flickr-embed="true"  href="https://www.flickr.com/photos/102397924@N07/22302231154/in/dateposted-public/" title="tpbw.glitched_10"><img src="https://farm6.staticflickr.com/5823/22302231154_9998927c6e.jpg" width="576" height="384" alt="tpbw.glitched_10"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
