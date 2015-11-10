@@ -179,7 +179,12 @@ class glitch():
             #TODO: ordered defaultdict to sequentially add pixels to dictionary according to distance from random starting seed within each freq category?
         self.new_img = Image.new(self.img.mode, self.img.size)
         self.new_img.putdata(pixels_sorted)
-        self.new_img.show()
+        #self.new_img.show()
+
+        # create StringIO object to store output of converting Image object back to JPEG
+        output = StringIO()
+        self.new_img.save(output, format='JPEG')
+        self.data = output.getvalue()
         self.change_log.append('Pixels sorted by frequency')
 
 
@@ -207,9 +212,11 @@ class flickr_browse():
             args = ''.join( '&{}={}'.format(k,v) for k,v in d_args.items() )
             curled = subprocess.check_output("curl \
             '{}{}'".format( self.BASE_URL, args ), shell = True)
+
         # TO DO: other ways to search flickr? (by geotag, etc)
         else:
             pass
+
         # create hit list from returned json, ignoring header text
         self.l_hits = [ img.split(",") for img in curled.split('{') ][3:]
 
@@ -229,10 +236,13 @@ class flickr_browse():
 
         if pop_open:
             # open in new Chrome tab
-            webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(hit_url, new=2)
+            #webbrowser.get("open -a /Applications/Google\ Chrome.app %s").open(hit_url, new=2)
+
+            # open in default browser (new tab if possible)
+            webbrowser.open(hit_url, new=2)
 
         if write:
-            # write image data to file in directory specified by global var PATH_OUT
+            # write image data to file in directory specified by global PATH_OUT
             outfile = outfile_path( PATH_OUT, '{}.jpg'.format(d_hit['id']) )
             with open(outfile, "w") as file_out:
                 file_out.write( requests.get(hit_url).content )
@@ -244,6 +254,7 @@ class flickr_browse():
 ###############################################################################
 ###############################################################################
 ###############################################################################
+
 
 def outfile_path(path_to_dir, filename):
     """Given directory and desired filename, returns path to outfile that will not overwrite existing file/s by appending '_<i>' to filename"""
@@ -331,6 +342,7 @@ def parse_args():
 ###############################################################################
 ###############################################################################
 
+PATH_OUT = '.'
 
 #KEY = 'new york city'
 #IMG_IN = '/Users/miriamshiffman/Downloads/screen-shot-2015-10-08-at-105557-am.png'
