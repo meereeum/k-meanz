@@ -69,7 +69,7 @@ class kmeans():
 
     def minimize_distance(self, pixel, metric):
         """Given tuple representing pixel in image, return k group that minimizes distance by given metric"""
-        dists = [ (k, metric(nd.array(pixel), nd.array(k))) for k in self.d_k_clusters.iterkeys() ]
+        dists = [ (k, metric(np.array(pixel), np.array(k))) for k in self.d_k_clusters.iterkeys() ]
         # find tuple representing best k group by minimizing distance
         best_k, _ = sorted( dists, key = lambda t: t[1] )[0]
         return best_k
@@ -83,6 +83,7 @@ class kmeans():
     def assign_pixels(self, metric):
         """Assign all pixels in image to closest matching group in self.d_k_groups, according to given distance metric"""
         print 'assigning pixels'
+
         #for i,t in enumerate(( (m,n) for m in xrange(0, self.arr.shape[0]) for n in xrange(0, self.arr.shape[1]) )):
             ## convert (m, n) of pixel location to ((m, n), (r, g, b))
             #tval = self.mn2mnrgb(t)
@@ -95,14 +96,23 @@ class kmeans():
         #data = sorted()
 
         # try iterating over numpy array by adding multi-index to nditer
-        code.interact(local=locals())
         it = np.nditer(self.arr, flags=['multi_index'])
+        tval = []
         while not it.finished:
-            # tval = [m,n,R,G,B]
-            print it.multi_index
-            print it[0]
-            tval = [i for i in it.multi_index] + [v for v in it[0]]
-            self.d_k_clusters[ self.minimize_distance( tval, metric ) ].append(tval)
+            # it.multi_index yields (i, j, index of RGB val) - where index is 0,1,2
+            # it[0] at that index yields array(value, dtype=uint8)
+            # tval = [m,n] + [R,G,B]
+            # tval = [i for i in it.multi_index] + [v for v in it[0]]
+            i, j, rgb_i = it.multi_index
+            # initialize tval with i,j position in array
+            if rgb_i == 0:
+                tval = [i, j]
+            tval.append(int(it[0]))
+            # end of R,G,B values corresponding to that position i,j in array
+            if rgb_i == 2:
+                # update cluster dictionary with tval and clear for next value
+                self.d_k_clusters[ self.minimize_distance( tval, metric ) ].append(tval)
+                tval = []
             it.iternext()
 
 
