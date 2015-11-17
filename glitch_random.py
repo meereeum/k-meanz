@@ -58,8 +58,7 @@ class glitch():
 
         if self.from_file:
             self.data = self.read_from_file(path)
-            # set name of file with call to `basename`
-            self.name = subprocess.check_output("basename {}".format(path), shell=True).strip()
+            self.name = os.path.basename(self.path)
 
         # if not from_file, path is a URL to image online
         else:
