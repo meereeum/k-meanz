@@ -57,7 +57,9 @@ class kmeans():
         # check to see that two random k points are not identical
         while len(set(self.k_lst)) < self.k:
             self.k_lst.append( (random.randint(0, self.arr.shape[0]-1), random.randint(0, self.arr.shape[1]-1)) )
+
         self.__initialize_k_dict__(self.k_lst)
+        # TODO: random.sample ?
 
 
     def __initialize_k_dict__(self, k_vals):
@@ -72,6 +74,7 @@ class kmeans():
         dists = [ (k, metric(np.array(pixel), np.array(k))) for k in self.d_k_clusters.iterkeys() ]
         # find tuple representing best k group by minimizing distance
         best_k, _ = sorted( dists, key = lambda t: t[1] )[0]
+        #print sorted( dists, key = lambda t: t[1] )[0]
         return best_k
 
 
@@ -80,33 +83,47 @@ class kmeans():
         return np.append(t_mn, self.arr[t_mn[0], t_mn[1]])
 
 
-    def assign_pixels(self, metric):
-        """Assign all pixels in image to closest matching group in self.d_k_groups, according to given distance metric"""
-        print 'assigning pixels'
+    def assign_pixels_for_loop(self, metric):
+        """Clusters pixels by iterating over numpy array with for loop"""
 
-        #for i,t in enumerate(( (m,n) for m in xrange(0, self.arr.shape[0]) for n in xrange(0, self.arr.shape[1]) )):
-            ## convert (m, n) of pixel location to ((m, n), (r, g, b))
-            #tval = self.mn2mnrgb(t)
-            ## append to dictionary value list corresponding to key of k-mean that minimizes distance by given metric
-            #self.d_k_clusters[ self.minimize_distance( tval, metric ) ].append(tval)
+        #for i,t in enumerate(( (m,n) for m in xrange(0, self.arr.shape[0]) \
+                               #for n in xrange(0, self.arr.shape[1]) )):
+
+        for tup in ( (m,n) for m in xrange(0, self.arr.shape[0]) \
+                               for n in xrange(0, self.arr.shape[1]) ):
+            # convert (m, n) of pixel location to ((m, n), (r, g, b))
+            tval = self.mn2mnrgb(tup)
+
+            # append to dictionary value list corresponding to key of k-mean
+            # that minimizes distance by given metric
+            self.d_k_clusters[ self.minimize_distance( tval, metric ) ].append(tval)
+
             #print '{}/{}'.format(i, self.arr.shape[0]*self.arr.shape[1])
+
+
+    def assign_pixels_nditer(self, metric):
+        """Assign all pixels in image to closest matching group in self.d_k_groups, according to given distance metric, by iterating over numpy array of pixels with np.nditer method"""
+        #print 'assigning pixels'
 
         #TODO: implement itertools.groupby before appending to dictionary ??
         #clusters = []
         #data = sorted()
 
         # try iterating over numpy array by adding multi-index to nditer
+        # (iterates over 1-D array)
         it = np.nditer(self.arr, flags=['multi_index'])
         tval = []
+
+        # use C-style do-while in order to access index at each value
         while not it.finished:
             # it.multi_index yields (i, j, index of RGB val) - where index is 0,1,2
             # it[0] at that index yields array(value, dtype=uint8)
-            # tval = [m,n] + [R,G,B]
-            # tval = [i for i in it.multi_index] + [v for v in it[0]]
+            # tval = [i,j] + [R,G,B]
             i, j, rgb_i = it.multi_index
             # initialize tval with i,j position in array
             if rgb_i == 0:
                 tval = [i, j]
+            # accumulate successive R,G,B values onto tval
             tval.append(int(it[0]))
             # end of R,G,B values corresponding to that position i,j in array
             if rgb_i == 2:
@@ -116,27 +133,71 @@ class kmeans():
             it.iternext()
 
 
+    def assign_pixels_map(self, metric):
+        # try mapping array index onto r,g,b pixel value to generate array of (r,g,b,m,n) values
+        m, n, _ = self.arr.shape
+
+        def get_idx_arr_1():
+            idx_arr = np.empty((m, n, 2))
+            for j in xrange(m):
+                for k in xrange(n):
+                    idx_arr[j,k] = [j, k]
+            return idx_arr
+
+        def get_idx_arr_2():
+            """Returns 3D numpy array populated with arrays representing corresponding (row, column)"""
+            idx_arr = np.array([ (j,k) for j in xrange(m) for k in xrange(n) ]).reshape((m, n, 2))
+            return idx_arr
+
+        self.idx_arr = get_idx_arr_2()
+        self.arr_extended = np.concatenate((self.idx_arr, self.arr), axis=2)
+
+        m_new, n_new, i = self.arr_extended.shape
+        assert i == 5
+        assert m_new == m
+        assert n_new == n
+
+        #def min_dist_k_v(tval):
+            #return (tval, self.minimize_distance(tval, metric))
+#
+        #vect_min_dist_k_v = np.vectorize(min_dist_k_v)
+        #self.arr_mapped = vect_min_dist_k_v(self.arr_extended)
+#
+        #self.d_k_clusters = {k: v for k,v in self.arr_mapped}
+
+        def update_clusters(tval):
+            self.d_k_clusters[ self.minimize_distance( tval, metric ) ].append(tval)
+            return tval
+
+        np.apply_along_axis(update_clusters, 2, self.arr_extended)
+
+
     def generate_image(self, warholize=False):
         """Once all pixels have been assigned to k clusters, use d_k_clusters to generate image data, with new pixel values determined by mean RGB of the cluster, or random color palette if warholize=True"""
-        self.new_arr = np.empty(self.arr.shape)
+        #print "shape is {}".format(self.arr.shape)
+        self.new_arr = np.empty(self.arr.shape, dtype=np.uint8)
 
         def mean_rgb(k):
             """Given key value in self.d_k_clusters, return k mean by averaging (r,g,b) value over all values in group"""
             val_arr = np.array(self.d_k_clusters[k])
-            print "val_arr is {}".format(val_arr)
-            return tuple(int(val) for val in np.mean(val_arr, axis=0))
+            # returns np array of ints corresponding to R,G,B
+            return np.mean(val_arr, axis=0).astype(int)[-3:]
 
         if warholize:
             random_colors = random_color_palette(self.k)
 
-        print 'putting pixels'
+        #print 'putting pixels'
 
-        for i, (k, v_list) in enumerate(self.d_k_clusters.iteritems()):
-            print '.'
+        for i, (k, v_lst) in enumerate(self.d_k_clusters.iteritems()):
+            #print '.'
             pixelval = ( random_colors[i] if warholize else mean_rgb(k) )
+            #for t_mn, _ in v_list:
+                #self.new_arr[t_mn[0], t_mn[1]] = pixelval
 
-            for t_mn, _ in v_list:
-                self.new_arr[t_mn[0], t_mn[1]] = pixelval
+            #print 'pixelval is {}'.format(pixelval)
+            #print 'v_lst is {}'.format(v_lst)
+            for i, j, _r, _g, _b in v_lst:
+                self.new_arr[i, j] = pixelval
 
         self.new_img = Image.fromarray(self.new_arr)
         self.new_img.show()
@@ -199,7 +260,7 @@ def random_color_palette(n, RGB=True):
 #@profile
 def implement(infile, k, warholize=False):
     x = kmeans(infile, k=k)
-    x.assign_pixels(metric=euclidean_dist_np)
+    x.assign_pixels_map(metric=euclidean_dist_np)
     x.generate_image(warholize=warholize)
 
 FILE_IN = '/Users/miriamshiffman/Desktop/Pics/Art/sc236393.jpg'
