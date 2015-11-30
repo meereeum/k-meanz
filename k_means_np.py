@@ -54,10 +54,11 @@ class kmeans():
         idx_lst = [ (j,k) for j in xrange(m) for k in xrange(n) ]
         k_vals = random.sample(idx_lst, self.k)
 
-        # initialize dictionary of k starting values (centroids)
+        # initialize list containing dictionary of k starting values (centroids)
         # must convert np array to hashable type (tuple) for key
+        # will append to list after each stage of clustering, so access most recent by [-1] index
         self.d_k_clusters = { (k_mn + tuple(self.arr[k_mn])): [] for k_mn in k_vals }
-
+        self.d_k_clusters_lst = [self.d_k_clusters]
         # 3D numpy array populated with arrays representing corresponding [row, column]
         self.idx_arr = np.array(idx_lst).reshape((m, n, 2))
 
@@ -66,7 +67,7 @@ class kmeans():
         """Given tuple representing pixel in image, return centroid that minimizes distance by given metric"""
         dists = [ (k, metric(np.array(pixel), np.array(k))) for k in self.d_k_clusters.iterkeys() ]
         # find tuple representing best k group by minimizing distance
-        best_k, _ = sorted( dists, key = lambda t: t[1] )[0]
+        best_k, _ = min( dists, key = lambda t: t[1] )
         return best_k
 
 
@@ -74,13 +75,12 @@ class kmeans():
         """Given np array representing pixel in image, return centroid that minimizes distance by given metric"""
         dists = [ (k, metric(pixel, np.array(k))) for k in self.d_k_clusters.iterkeys() ]
         # find np array representing best k group by minimizing distance
-        best_k, _ = sorted( dists, key = lambda t: t[1] )[0]
+        best_k, _ = min( dists, key = lambda t: t[1] )
         return best_k
 
 
     def assign_pixels_for_loop(self, metric):
         """Clusters pixels by iterating over numpy array with for loop"""
-
         def mn2mnrgb(self, t_mn):
             """Given (m,n) of pixel, returns np array of [ m, n, R, G, B ]"""
             return np.append(t_mn, self.arr[t_mn[0], t_mn[1]])
@@ -97,7 +97,6 @@ class kmeans():
     def assign_pixels_nditer(self, metric):
         """Assign all pixels in image to closest matching group in self.d_k_groups, according to given distance metric, by iterating over numpy array of pixels with np.nditer method"""
         #print 'assigning pixels'
-
         #TODO: implement itertools.groupby before appending to dictionary ??
         #clusters = []
         #data = sorted()
@@ -161,16 +160,20 @@ class kmeans():
 
     def generate_image_2(self, warholize=False):
         """Once all pixels have been assigned to k clusters, use d_k_clusters to generate image data, with new pixel values determined by mean RGB of the cluster, or random color palette if warholize=True"""
-        def mean_mnrgb(k):
-            """Given key value in self.d_k_clusters, return new centroid
-            by averaging (m,n,r,g,b) over all values in group"""
-            val_arr = np.array(self.d_k_clusters[k])
-            new_centroid = np.mean(val_arr, axis=0)
+        def mean_mnrgb(v_lst):
+            """Given list of values in self.d_k_clusters.values(),
+            return new centroid by averaging (m,n,r,g,b) over all values in group"""
+            new_centroid = np.mean( np.array(v_lst), axis=0 )
             return tuple(new_centroid)
 
-        # update dictionary keys with new centroid values
-        for k in self.d_k_clusters.iterkeys():
-            self.d_k_clusters[mean_mnrgb(k)] = self.d_k_clusters.pop(k)
+        # iterating while changing dict causes weird behavior!
+        ## update dictionary keys with new centroid values
+        #for k in self.d_k_clusters.iterkeys():
+            #self.d_k_clusters[mean_mnrgb(k)] = self.d_k_clusters.pop(k)
+
+        #  updated centroids!
+        self.d_k_clusters_lst.append( { mean_mnrgb(v): v for v in self.d_k_clusters.itervalues() } )
+        self.d_k_clusters = self.d_k_clusters_lst[-1]
 
         self.new_arr = np.empty(self.arr.shape, dtype=np.uint8)
 
@@ -178,7 +181,7 @@ class kmeans():
             random_colors = random_color_palette(self.k)
 
         for i, (k, v_lst) in enumerate(self.d_k_clusters.iteritems()):
-            pixelval = ( random_colors[i] if warholize else (int(rgb) for rgb in k[-3:]) )
+            pixelval = ( random_colors[i] if warholize else [int(rgb) for rgb in k[-3:]] )
             for m, n, _r, _g, _b in v_lst:
                 self.new_arr[m, n] = pixelval
 
