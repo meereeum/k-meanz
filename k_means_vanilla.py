@@ -26,32 +26,75 @@ class kmeans():
 
         # 2D array = array of [m, n, r, g, b] arrays
         self.arr = np.concatenate((idx_arr, pixels), axis=2).\
-                   ravel().reshape((1,self.m*self.n,5))
+                   ravel().reshape((self.m*self.n,5))
 
         centroids = random.sample(self.arr, self.k)
-        import code; code.interact(local=locals())
-        centroids_history = [centroids]
-        # initialize list containing dictionary of k starting values (centroids)
-        # must convert np array to hashable type (tuple) for key
-        # will append to list after each stage of clustering, so access most recent by [-1] index
-        self.d_k_clusters = { (k_mn + tuple(self.arr[k_mn])): [] for k_mn in k_vals }
-        self.d_k_clusters_lst = [self.d_k_clusters]
-        # 3D numpy array populated with arrays representing corresponding [row, column]
+        centroids_history = [centroids[:]]
 
         for _ in xrange(rounds):
-            self.assign_to_clusters()
+            #self._centroids=self.centroids()
+            # TODO: use @property decorator ???
             centroids = self.update_centroids(centroids=centroids)
             centroids_history.append(centroids)
+            print 'cluster round {} done!'.format(_)
+        self.generate_image(centroids)
 
-    def assign_to_clusters():
-        pass
 
-    def generate_image():
-        pass
+    #@property
+    #def centroids(self):
+        #return self._centroids
+#
+    #@centroids.setter
+    #def centroids(self, rounds):
+        #self._centroids = self.update_centroids()
 
-    def update_centroids():
-        pass
 
+    def update_centroids(self, centroids):
+        def nearest_centroid(pixel, metric = self.euclidean_dist):
+            """Find np array representing best centroid by minimizing distance, and return as tuple (b/c hashable)"""
+            dists = [ (k, metric(pixel,k)) for k in centroids ]
+            best_k, _ = min( dists, key = lambda t: t[1] )
+            return tuple(best_k)
+
+        d_centroids = {tuple(k): np.zeros([6], dtype=np.float32)
+                       for k in centroids}
+        for arr in self.arr:
+            # dictionary values = [num points, summed dim1, ..., summed dim 5]
+            d_centroids[nearest_centroid(arr)] += np.concatenate([[1.0], arr])
+
+        #for k,v in d_centroids.iteritems():
+            #print 'centroid {}: {} assigned'.format(k,v[0])
+
+        return [ val_arr[1:]/val_arr[0] for val_arr in d_centroids.itervalues() ]
+
+
+    def euclidean_dist(self,v1,v2):
+        """Returns Frobenius norm (float) of two vectors (=Euclidean distance)"""
+        return np.linalg.norm(v1-v2)
+
+
+    def assign_to_clusters(self, centroids):
+        def nearest_centroid(pixel, metric = self.euclidean_dist):
+            """Find np array representing best centroid by minimizing distance, and return as tuple (b/c hashable)"""
+            dists = [ (k, metric(pixel,k)) for k in centroids ]
+            best_k, _ = min( dists, key = lambda t: t[1] )
+            return tuple(best_k)
+        d_clusters = {tuple(k): [] for k in centroids}
+        for arr in self.arr:
+            # dictionary values = [num points, summed dim1, ..., summed dim 5]
+            d_clusters[nearest_centroid(arr)].append(arr)
+        return d_clusters
+
+
+    def generate_image(self, centroids):
+        self.new_arr = np.empty(self.arr.shape, dtype=np.uint8)
+        d_clusters = self.assign_to_clusters(centroids)
+        for centroid, pixels in d_clusters.iteritems():
+            centroid_rgb = [int(x) for x in centroid[-3:]]
+            for pixel in pixels:
+                self.new_arr[int(pixel[0]),int(pixel[1])] = centroid_rgb
+        self.new_img = Image.fromarray(self.new_arr)
+        self.new_img.show()
 
 
 if __name__ == "__main__":
