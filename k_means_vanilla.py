@@ -4,22 +4,27 @@ import random
 import os
 
 class kmeans():
-    def __init__(self, filepath, k = 10, rounds=10, scale=False):
-        self.basename = os.path.basename(filepath)
+    def __init__(self, filepath, k=10, rounds=10, scale=False,
+                 generate_all=False, outdir=None):
+        self.k = k
+        if not outdir:
+            # default to parent directory of input
+            self.outdir = os.path.dirname(filepath)
+        # basename sans extension
+        self.basename = os.path.splitext(os.path.basename(filepath))[0]
         img = Image.open(filepath)
         #img.show()
-        self.k = k
         # initialize pixel map = m x n array (row by column rather than x & y)
         self.pixels = np.array(img)
 
         m, n, cols = self.pixels.shape
-        if cols > 3:
+        if cols > 3: # clean gratuitous additions to RGB data
             self.pixels = self.pixels[:,:,:3]
 
         dims = (m,n)
         if scale:
             self.ratio = 255.0/max(dims)
-            dims = tuple(self.ratio*d for d in dims)
+            #dims = tuple(self.ratio*d for d in dims)
         else:
             self.ratio = 1.0
 
@@ -37,6 +42,12 @@ class kmeans():
             centroids = self.update_centroids(centroids=centroids)
             self.centroids_history.append(centroids)
             print "cluster round {} done! --> {} 'roids".format(_, len(centroids))
+            if generate_all:
+                self.generate_image()
+
+        if not generate_all:
+            # final image only
+            self.generate_image()
 
 
     #@property
@@ -82,7 +93,7 @@ class kmeans():
         return d_clusters
 
 
-    def generate_image(self, round_idx=-1, outdir=None):
+    def generate_image(self, round_idx=-1, save=True):
         """Generate new image by clustering pixels according to given centroids (defaulting to last round of clustering) and assiging centroid RGB to each cluster"""
         assert round_idx <= len(self.centroids_history)
         new_arr = np.empty_like(self.pixels, dtype=np.uint8)
@@ -94,14 +105,18 @@ class kmeans():
                     = centroid_rgb
         new_img = Image.fromarray(new_arr)
         new_img.show()
-        if outdir:
-            outfile = os.path.join(outdir, self.basename + '_kmeanz_{}'.format(round_idx))
+        if save:
+            if round_idx < 0:
+                # rename round_idx for outfile name
+                round_idx = len(self.centroids_history) + round_idx
+            outfile = os.path.join(self.outdir, '{}_kmeanz_{}.jpg'.\
+                                   format(self.basename,round_idx))
             new_img.save(outfile, format='JPEG')
 
 
 if __name__ == "__main__":
     INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-    OUTDIR = '/Users/miriamshiffman/Downloads'
-    x = kmeans(filepath=INFILE, k=1000, rounds=5)
-    for i in xrange(5):
-        x.generate_image(round_idx=i, outdir=OUTDIR)
+    #OUTDIR = '/Users/miriamshiffman/Downloads'
+    x = kmeans(filepath=INFILE, k=1000, rounds=5, generate_all=True)
+    #for i in xrange(5):
+        #x.generate_image(round_idx=i, outdir=OUTDIR)
