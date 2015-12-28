@@ -7,7 +7,7 @@ import random
 INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
 
 class kmeans():
-    def __init__(self, filepath=INFILE, rounds=1, k=1000, scale=False):
+    def __init__(self, filepath=INFILE, rounds=2, k=10, scale=False):
         self.k = k
         img = Image.open(filepath)
         self.pixels = np.array(img)
@@ -19,10 +19,10 @@ class kmeans():
         self.n_pixels = m*n
 
         if scale:
-            ratio = 255.0/max(dims)
+            self.ratio = 255.0/max(dims)
             dims = tuple(ratio*d for d in dims)
         else:
-            ratio = 1.0
+            self.ratio = 1.0
 
         idx_lst = [ (j*ratio, k*ratio) for j in xrange(m) for k in xrange(n) ]
         idx_arr = np.array(idx_lst).reshape((m, n, 2))
@@ -31,23 +31,24 @@ class kmeans():
         self.arr = np.concatenate((idx_arr, self.pixels), axis=2).\
                     ravel().reshape((m*n,5))
 
+        #centroids = np.array(random.sample(self.arr, self.k), dtype=np.float32)
         self._build_graph()
-        centroids = tf.constant(np.array(random.sample(self.arr, self.k)), dtype=tf.float32)
 
         with tf.Session() as sesh:
             sesh.run(tf.initialize_all_variables())
+            centroids = sesh.run(self.centroids)
             for i in xrange(rounds):
-                centroids = sesh.run(centroids, feed_dict =
-                                     {self.centroids_in: centroids.eval()})
+                centroids = sesh.run(self.centroids, feed_dict =
+                                    {self.centroids_in: centroids})
                 print "round {} -->  centroids: {}".format(i,centroids)
 
 
-    def _build_graph(self):
+    def _build_graph(self):#, random_centroids):
         pixels = tf.constant(self.arr, name="pixels", dtype=tf.float32)
-        #self.pixels = tf.placeholder(tf.float32, name="pixels",
-                                #shape=(self.n_pixels,5))
-        self.centroids_in = tf.placeholder(tf.float32, name="centroids_in",
-                                       shape=(self.k,5))
+        #self.centroids_in = tf.placeholder(name="centroids_in", dtype=tf.float32,
+                                           #shape=(self.k,5))
+        self.centroids_in = tf.Variable(np.array(random.sample(self.arr, self.k), dtype=np.float32),
+                                        name="centroids_in")
         # tiled should be shape(self.n_pixels,self.k,5)
         tiled_roids = tf.tile(tf.expand_dims(self.centroids_in,0),
                               multiples=[self.n_pixels,1,1])
@@ -65,7 +66,7 @@ class kmeans():
         # should be list of len self.k with tensors of shape(size_cluster, 5)
         clusters = tf.dynamic_partition(pixels,nearest,self.k)
         # should be shape(self.k,5)
-        centroids = tf.reshape(
+        self.centroids = tf.reshape(
             tf.concat(0,[tf.reduce_mean(cluster,0) for cluster in clusters]),
             shape=(self.k,5))
 
