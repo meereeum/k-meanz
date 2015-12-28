@@ -106,7 +106,7 @@ class kmeans():
         print 'putting pixels'
 
         for i, (k, v_list) in enumerate(self.d_k_clusters.iteritems()):
-            print '.'
+            #print '.'
             pixelval = ( random_colors[i] if warholize else mean_rgb(k) )
 
             for t_xy, _ in v_list:
@@ -167,7 +167,7 @@ def random_color_palette(n, RGB=True):
     return [ hsv2rgb((h, SATURATION, VALUE)) for h in l_hues ]
 
 
-@profile
+#@profile
 def implement(infile, k, warholize=False):
     x = kmeans(infile, k=k)
     x.assign_pixels(metric=euclidean_dist)
