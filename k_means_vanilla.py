@@ -3,12 +3,12 @@ from PIL import Image
 import random
 import os
 
+
 class kmeans():
     def __init__(self, filepath, k=10, rounds=10, scale=False,
                  generate_all=False, outdir=None):
         self.k = k
-        if not outdir:
-            # default to parent directory of input
+        if not outdir: # default to parent directory of input
             self.outdir = os.path.dirname(filepath)
         # basename sans extension
         self.basename = os.path.splitext(os.path.basename(filepath))[0]
@@ -20,17 +20,10 @@ class kmeans():
         m, n, cols = self.pixels.shape
         if cols > 3: # clean gratuitous additions to RGB data
             self.pixels = self.pixels[:,:,:3]
-
-        dims = (m,n)
-        if scale:
-            self.ratio = 255.0/max(dims)
-            #dims = tuple(self.ratio*d for d in dims)
-        else:
-            self.ratio = 1.0
+        self.ratio = (255.0/max(m,n) if scale else 1.0) # rescale by max dimension
 
         idx_lst = [ (j*self.ratio, k*self.ratio) for j in xrange(m) for k in xrange(n) ]
         idx_arr = np.array(idx_lst).reshape((m, n, 2))
-
         # 2D array = array of [m, n, r, g, b] arrays
         self.arr = np.concatenate((idx_arr, self.pixels), axis=2).\
                    ravel().reshape((m*n,5))
@@ -45,23 +38,12 @@ class kmeans():
             if generate_all:
                 self.generate_image()
 
-        if not generate_all:
-            # final image only
+        if not generate_all: # final image only
             self.generate_image()
 
 
-    #@property
-    #def centroids(self):
-        ##return self._centroids
-        #print 'hi'
-        #return self.centroids_history[-1]
-#
-    #@centroids.setter
-    #def centroids(self, value):
-        #self._centroids = self.centroids_history[-1]
-
-
-    def update_centroids(self, centroids, with_dropout=True):
+    def update_centroids(self, centroids):
+        """Given previous centroids, cluster pixels (tallying sums and cluster sizes), and return new list of centroids"""
         d_centroids = {tuple(k): np.zeros([6], dtype=np.float32)
                        for k in centroids}
         for arr in self.arr:
@@ -71,7 +53,7 @@ class kmeans():
         #for k,v in d_centroids.iteritems():
             #print 'centroid {}: {} assigned'.format(k,v[0])
         return [ val_arr[1:]/val_arr[0] for val_arr in d_centroids.itervalues()
-                 if val_arr[0] > 0 ]
+                 if val_arr[0] > 0 ] # drop centroids with empty clusters
 
 
     def nearest_centroid(self, pixel, centroids):
@@ -118,5 +100,3 @@ if __name__ == "__main__":
     INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
     #OUTDIR = '/Users/miriamshiffman/Downloads'
     x = kmeans(filepath=INFILE, k=1000, rounds=5, generate_all=True)
-    #for i in xrange(5):
-        #x.generate_image(round_idx=i, outdir=OUTDIR)
