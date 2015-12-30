@@ -4,25 +4,26 @@ from PIL import Image
 import random
 import itertools
 import os
+import datetime
 
 
 class kmeans():
     def __init__(self, filepath, rounds=2, k=10, scale=False, generate_all=True, outdir=None):
+        self.now = ''.join(c for c in str(datetime.datetime.today()) if c in '0123456789 ')[2:13].replace(' ','_') # YYMMDD_HHMM
         self.k = k
         self.scale = scale
         self.filename = filepath
-        if not outdir: # default to parent directory of input
-            outdir = os.path.dirname(filepath)
+        # default to parent directory of input
+        self.outdir = (os.path.dirname if not outdir else outdir)
         # basename sans extension
-        basename = os.path.splitext(os.path.basename(filepath))[0]
+        self.basename = os.path.splitext(os.path.basename(filepath))[0]
+
         self.pixels = np.array(Image.open(filepath))
-#
         #m, n, cols = self.pixels.shape
         #if cols > 3:
             #self.pixels = self.pixels[:,:,:3]
         #self.n_pixels = m*n
         #self.ratio = (255.0/max(m,n) if scale else 1.0) # rescale by max dimension
-#
         #idx_lst = [ (j*self.ratio, k*self.ratio) for j in xrange(m) for k in xrange(n) ]
         #idx_arr = np.array(idx_lst).reshape((m, n, 2))
         ## 2D array = array of [m, n, r, g, b] arrays
@@ -41,14 +42,12 @@ class kmeans():
                 centroids = sesh.run(self.centroids, feed_dict)
                 feed_dict = {self.centroids_in: centroids}
                 print "round {} -->  centroids: {}".format(i,centroids)
+
                 if generate_all:
-                    outfile = os.path.join(outdir, '{}_k{}_{}.jpg'.\
-                                        format(basename,self.k,i))
-                    self.generate_image(outfile=outfile)
+                    self.generate_image(round_id=i)
+
             if not generate_all: # final image only
-                outfile = os.path.join(outdir, '{}_k{}_{}.jpg'.\
-                                    format(basename,self.k,i))
-                self.generate_image(outfile=outfile)
+                self.generate_image(round_id=i)
 
 
     def _image_to_data(self):
@@ -58,10 +57,11 @@ class kmeans():
         m, n, chann = tf.shape(pixels).eval()
         ratio = (255.0/max(m,n) if self.scale else 1.0) # rescale by max dimension
         self.ratio = tf.constant(ratio, dtype=tf.float32)
-        #idxs = self.ratio*tf.constant([(j*self.ratio,k*self.ratio) for j in xrange(m) for k in xrange(n)])
-        idxs = tf.mul(self.ratio,
-                      tf.constant([(j,k) for j in xrange(m) for k in xrange(n)],dtype=tf.float32))
-        self.arr = tf.concat(1, [idxs, tf.to_float(tf.reshape(pixels, shape=(m*n,chann)))])
+        #idxs = tf.constant([(j*self.ratio,k*self.ratio) for j in xrange(m) for k in xrange(n)])
+        idxs = tf.mul(self.ratio, tf.constant([(j,k) for j in xrange(m)
+                                               for k in xrange(n)], dtype=tf.float32))
+        self.arr = tf.concat(1, [idxs, tf.to_float(tf.reshape(pixels,
+                                                              shape=(m*n,chann)))])
         self.n_pixels, self.dim = tf.shape(self.arr).eval() # i.e. m*n, chann + 2
 
 
@@ -91,7 +91,6 @@ class kmeans():
                                   reduction_indices=2, name="distances")
         # should be shape(self.n_pixels)
         nearest = tf.to_int32(tf.argmin(distances,1), name="nearest")
-
         # should be list of len self.k with tensors of shape(size_cluster, 5)
         self.clusters = tf.dynamic_partition(self.arr,nearest,self.k)
         # should be shape(self.k,5)
@@ -100,7 +99,7 @@ class kmeans():
             shape=(self.k,self.dim), name="centroids_out")
 
 
-    def generate_image(self, outfile=None, save=True):
+    def generate_image(self, round_id, save=True):
         new_arr = np.empty_like(self.pixels, dtype=np.uint8)
         #centroids_rgb = np.int32(self.centroids.eval()[:,2:])
         centroids_rgb = tf.to_int32(tf.slice(self.centroids,[0,2],[-1,-1])).eval()
@@ -110,18 +109,20 @@ class kmeans():
                                             self.ratio))
             for pixel in cluster_mn.eval():
                 new_arr[tuple(pixel)] = centroid_rgb
-        new_img = Image.fromarray(new_arr)
-        new_img.show()
-        if save and outfile:
-            i = 1
-            while os.path.isfile(outfile):
-                outfile = '{}_{}'.format(i,outfile)
-                i += 1
-            new_img.save(outfile, format='JPEG')
+        new_img = tf.image.encode_jpeg(tf.constant(new_arr, dtype=tf.uint8)).eval()
+        #new_img = Image.fromarray(new_arr)
+        #new_img.show()
+
+        if save:
+            outfile = os.path.join(self.outdir, '{}_{}_k{}_{}.jpg'.\
+                                format(self.basename,self.now,self.k,round_id))
+        with open(outfile, 'w') as f:
+            f.write(new_img)
+        #new_img.save(outfile, format='JPEG')
 
 
 
 if __name__=="__main__":
     INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
     OUTDIR = '/Users/miriamshiffman/Downloads/kmeanz'
-    x = kmeans(INFILE, outdir=OUTDIR, k=12, rounds=5)
+    kmeans(INFILE, outdir=OUTDIR, k=12, rounds=2)
