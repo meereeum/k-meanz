@@ -21,17 +21,26 @@ class kmeans():
 
         with tf.Session() as sesh:
             self._image_to_data()
+            print '\nimage shape = ({},{},{})'.format(self.m,self.n,self.chann)
+            print 'pixels: {}\n'.format(self.n_pixels)
             self._build_graph()
-            sesh.run(tf.initialize_all_variables())
-            feed_dict = None # first round initialized with random centroids by tf node
-            for i in xrange(rounds):
-                centroids = sesh.run(self.centroids, feed_dict)
+            centroids = tf.slice(tf.random_shuffle(self.arr),[0,0],[self.k,-1]).eval()
+
+        #feed_dict = None # first round initialized with random centroids by tf node
+
+        # importantly - new sesh per round!
+        for i in xrange(rounds):
+            with tf.Session() as sesh:
+                sesh.run(tf.initialize_all_variables())
                 feed_dict = {self.centroids_in: centroids}
+                centroids = sesh.run(self.centroids, feed_dict)
                 print "round {} -->  centroids: {}".format(i,centroids)
+                print "other: ", self.centroids.eval()
+                #feed_dict = {self.centroids_in: centroids}
                 if generate_all:
                     self.generate_image(round_id=i)
-            if not generate_all: # final image only
-                self.generate_image(round_id=i)
+                if i==(rounds-1) and not generate_all: # final image only
+                    self.generate_image(round_id=i)
             #import code;code.interact(local=locals())
 
 
@@ -53,9 +62,9 @@ class kmeans():
     def _build_graph(self):
         """Construct tensorflow nodes for round of clustering"""
         # N.B. without tf.Variable, makes awesome glitchy clustered images
-        self.centroids_in = tf.Variable(tf.slice(tf.random_shuffle(self.arr),
-                                     [0,0],[self.k,-1]), name="centroids_in")
-        #centroids_in = tf.placeholder(name="centroids_in")
+        #self.centroids_in = tf.Variable(tf.slice(tf.random_shuffle(self.arr),
+                                     #[0,0],[self.k,-1]), name="centroids_in")
+        self.centroids_in = tf.placeholder(tf.float32, shape=(self.k,self.dim), name="centroids_in")
         # tiled should be shape(self.n_pixels,self.k,5)
         #tiled_pix = tf.tile(tf.expand_dims(self.arr,1),
                             #multiples=[1,self.k,1], name="tiled_pix")
@@ -74,7 +83,7 @@ class kmeans():
         nearest = tf.to_int32(tf.argmin(tf.reduce_sum(
             radical_euclidean_dist( tf.tile(tf.expand_dims(self.arr,1),
                                            multiples=[1,self.k,1]),
-                                    self.centroids_in ), reduction_indices=2),1))
+                                    self.centroids_in ), reduction_indices=2), 1))
 
         # should be list of len self.k with tensors of shape(size_cluster, 5)
         self.clusters = tf.dynamic_partition(self.arr,nearest,self.k)
@@ -88,7 +97,10 @@ class kmeans():
         #centroids_rgb = np.int32(self.centroids.eval()[:,2:])
         centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
         #centroids_rgb = tf.to_int32(tf.slice(self.centroids,[0,2],[-1,-1])).eval()
-
+        if save:
+            addon = ('' if self.ratio == 1.0 else '_scaled')
+            outfile = os.path.join(self.outdir, '{}_{}_k{}_{}{}.jpg'.\
+                                format(self.basename,self.now,self.k,round_id,addon))
         def array_put():
             #new_arr = np.empty_like(self.pixels, dtype=np.uint8)
             new_arr = np.empty([self.m,self.n,self.chann], dtype=np.uint8)
@@ -100,27 +112,23 @@ class kmeans():
                     new_arr[tuple(pixel)] = centroid_rgb
             new_img = tf.image.encode_jpeg(tf.constant(new_arr, dtype=tf.uint8)).eval()
             if save:
-                outfile = os.path.join(self.outdir, '{}_{}_k{}_{}.jpg'.\
-                                    format(self.basename,self.now,self.k,round_id))
                 with open(outfile, 'w') as f:
                     f.write(new_img)
                 os.popen("open '{}'".format(outfile))
 
         def array_sort():
             to_concat = []
-            for centroid_rgb, cluster in itertools.izip(centroids_rgb,self.clusters):
-                new_idxed_arr = tf.concat(1,[tf.slice(cluster,[0,0],[-1,2]),
+            for centroid_rgb, cluster in itertools.izip(centroids_rgb,clusters):
+                new_idxed_arr = tf.concat(1,[tf.slice(cluster,[0,0],[-1,2]), # no need to revisit ratio
                                             tf.tile(tf.expand_dims(tf.constant(centroid_rgb),0),
                                                 multiples=[len(cluster.eval()),1])])
                 to_concat.append(new_idxed_arr)
-            concated = tf.to_int32(tf.concat(0,to_concat))
+            concated = tf.concat(0,to_concat)
             #sorted_by_idx = np.sort(concated.eval())[:,2:]
             sorted_arr = np.array(sorted([list(arr) for arr in concated.eval()]), dtype=np.uint8)[:,2:]
-            new_img = Image.fromarray(sorted_arr.reshape([self.m,self.n,self.dim-2]))
+            new_img = Image.fromarray(sorted_arr.reshape([self.m,self.n,self.chann]))
             new_img.show()
             if save:
-                outfile = os.path.join(self.outdir, '{}_{}_k{}_{}.jpg'.\
-                                    format(self.basename,self.now,self.k,round_id))
                 new_img.save(outfile, format='JPEG')
 
         #array_sort()
@@ -135,5 +143,4 @@ if __name__=="__main__":
         INFILE = sys.argv[1]
     except(IndexError):
         INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-        #INFILE = '/Volumes/Media/Pictures/to_org/Wyeth 2.jpg'
-    kmeans(INFILE, outdir=OUTDIR, k=50, rounds=3, generate_all=False)
+    kmeans(INFILE, outdir=OUTDIR, k=30, rounds=5, scale=True, generate_all=False)
