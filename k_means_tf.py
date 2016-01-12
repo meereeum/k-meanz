@@ -24,7 +24,7 @@ class kmeans():
             print '\nimage shape = ({},{},{})'.format(self.m,self.n,self.chann)
             print 'pixels: {}\n'.format(self.n_pixels)
             self._build_graph()
-            centroids = tf.slice(tf.random_shuffle(self.arr),[0,0],[self.k,-1]).eval()
+            #centroids = tf.slice(tf.random_shuffle(self.arr),[0,0],[self.k,-1]).eval()
 
         #feed_dict = None # first round initialized with random centroids by tf node
 
@@ -45,13 +45,10 @@ class kmeans():
         with tf.Session() as sesh:
             sesh.run(tf.initialize_all_variables())
             for i in xrange(rounds):
-                centroids, _ = sesh.run([self.centroids, self.reassign_roids])
-                print "round {} -->  centroids: {}".format(i,centroids)
-                #print "other: ", self.centroids.eval()
+                self.update_roids.eval()
+                print "round {} -->  centroids: {}".format(i,self.centroids.eval())
 
-                if generate_all:
-                    self.generate_image(round_id=i)
-                if i==(rounds-1) and not generate_all: # final image only
+                if generate_all or i==(rounds-1): # all or final image only
                     self.generate_image(round_id=i)
 
 
@@ -102,13 +99,14 @@ class kmeans():
         self.centroids = tf.reshape(
             tf.concat(0,[tf.reduce_mean(cluster,0) for cluster in self.clusters]),
             shape=(self.k,self.dim), name="centroids_out")
-        self.reassign_roids = tf.assign(self.centroids_in, self.centroids)
+        self.update_roids = tf.assign(self.centroids_in, self.centroids)
 
 
     def generate_image(self, round_id, save=True):
         #centroids_rgb = np.int32(self.centroids.eval()[:,2:])
         centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
         #centroids_rgb = tf.to_int32(tf.slice(self.centroids,[0,2],[-1,-1])).eval()
+        #clusters = sesh.run(self.clusters)
         if save:
             addon = ('' if self.ratio == 1.0 else '_scaled')
             outfile = os.path.join(self.outdir, '{}_{}_k{}_{}{}.jpg'.\
@@ -155,4 +153,4 @@ if __name__=="__main__":
         INFILE = sys.argv[1]
     except(IndexError):
         INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-    kmeans(INFILE, outdir=OUTDIR, k=30, rounds=5, scale=True, generate_all=False)
+    kmeans(INFILE, outdir=OUTDIR, k=30, rounds=5, scale=True, generate_all=True)
