@@ -29,19 +29,30 @@ class kmeans():
         #feed_dict = None # first round initialized with random centroids by tf node
 
         # importantly - new sesh per round!
-        for i in xrange(rounds):
-            with tf.Session() as sesh:
-                sesh.run(tf.initialize_all_variables())
-                feed_dict = {self.centroids_in: centroids}
-                centroids = sesh.run(self.centroids, feed_dict)
-                print "round {} -->  centroids: {}".format(i,centroids)
-                print "other: ", self.centroids.eval()
+        #for i in xrange(rounds):
+            #with tf.Session() as sesh:
+                #sesh.run(tf.initialize_all_variables())
                 #feed_dict = {self.centroids_in: centroids}
+                #centroids = sesh.run(self.centroids, feed_dict)
+                #print "round {} -->  centroids: {}".format(i,centroids)
+                #print "other: ", self.centroids.eval()
+                ##feed_dict = {self.centroids_in: centroids}
+                #if generate_all:
+                    #self.generate_image(round_id=i)
+                #if i==(rounds-1) and not generate_all: # final image only
+                    #self.generate_image(round_id=i)
+            #import code;code.interact(local=locals())
+        with tf.Session() as sesh:
+            sesh.run(tf.initialize_all_variables())
+            for i in xrange(rounds):
+                centroids, _ = sesh.run([self.centroids, self.reassign_roids])
+                print "round {} -->  centroids: {}".format(i,centroids)
+                #print "other: ", self.centroids.eval()
+
                 if generate_all:
                     self.generate_image(round_id=i)
                 if i==(rounds-1) and not generate_all: # final image only
                     self.generate_image(round_id=i)
-            #import code;code.interact(local=locals())
 
 
     def _image_to_data(self):
@@ -62,9 +73,9 @@ class kmeans():
     def _build_graph(self):
         """Construct tensorflow nodes for round of clustering"""
         # N.B. without tf.Variable, makes awesome glitchy clustered images
-        #self.centroids_in = tf.Variable(tf.slice(tf.random_shuffle(self.arr),
-                                     #[0,0],[self.k,-1]), name="centroids_in")
-        self.centroids_in = tf.placeholder(tf.float32, shape=(self.k,self.dim), name="centroids_in")
+        self.centroids_in = tf.Variable(tf.slice(tf.random_shuffle(self.arr),
+                                     [0,0],[self.k,-1]), name="centroids_in")
+        #self.centroids_in = tf.placeholder(tf.float32, shape=(self.k,self.dim), name="centroids_in")
         # tiled should be shape(self.n_pixels,self.k,5)
         #tiled_pix = tf.tile(tf.expand_dims(self.arr,1),
                             #multiples=[1,self.k,1], name="tiled_pix")
@@ -91,6 +102,7 @@ class kmeans():
         self.centroids = tf.reshape(
             tf.concat(0,[tf.reduce_mean(cluster,0) for cluster in self.clusters]),
             shape=(self.k,self.dim), name="centroids_out")
+        self.reassign_roids = tf.assign(self.centroids_in, self.centroids)
 
 
     def generate_image(self, round_id, save=True):
