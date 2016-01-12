@@ -24,23 +24,30 @@ class kmeans():
             print '\nimage shape = ({},{},{})'.format(self.m,self.n,self.chann)
             print 'pixels: {}\n'.format(self.n_pixels)
             self._build_graph()
-            centroids = tf.slice(tf.random_shuffle(self.arr),[0,0],[self.k,-1]).eval()
+            #centroids = tf.slice(tf.random_shuffle(self.arr),[0,0],[self.k,-1]).eval()
 
         #feed_dict = None # first round initialized with random centroids by tf node
 
         # importantly - new sesh per round!
-        for i in xrange(rounds):
-            with tf.Session() as sesh:
-                sesh.run(tf.initialize_all_variables())
-                feed_dict = {self.centroids_in: centroids}
-                centroids = sesh.run(self.centroids, feed_dict)
-                print "round {} -->  centroids: {}".format(i,centroids)
+        #for i in xrange(rounds):
+            #with tf.Session() as sesh:
+                #sesh.run(tf.initialize_all_variables())
+                #feed_dict = {self.centroids_in: centroids}
+                #centroids = sesh.run(self.centroids, feed_dict)
+                #print "round {} -->  centroids: {}".format(i,centroids)
                 #print "other: ", self.centroids.eval()
-                if generate_all:
-                    self.generate_image(round_id=i, roids=centroids)
-                if i==(rounds-1) and not generate_all: # final image only
-                    self.generate_image(round_id=i, roids=centroids)
-            #import code;code.interact(local=locals())
+                ##feed_dict = {self.centroids_in: centroids}
+                #if generate_all:
+                    #self.generate_image(round_id=i)
+                #if i==(rounds-1) and not generate_all: # final image only
+                    #self.generate_image(round_id=i)
+        with tf.Session() as sesh:
+            sesh.run(tf.initialize_all_variables())
+            for i in xrange(rounds):
+                self.update_roids.eval()
+                print "round {} -->  centroids: {}".format(i,self.centroids.eval())
+                if generate_all or i==(rounds-1): # all or final image only
+                    self.generate_image(round_id=i)
 
 
     def _image_to_data(self):
@@ -61,12 +68,12 @@ class kmeans():
     def _build_graph(self):
         """Construct tensorflow nodes for round of clustering"""
         # N.B. without tf.Variable, makes awesome glitchy clustered images
-        #self.centroids_in = tf.Variable(tf.slice(tf.random_shuffle(self.arr),
-                                     #[0,0],[self.k,-1]), name="centroids_in")
-        self.centroids_in = tf.placeholder(tf.float32, shape=(self.k,self.dim), name="centroids_in")
+        self.centroids_in = tf.Variable(tf.slice(tf.random_shuffle(self.arr),
+                                     [0,0],[self.k,-1]), name="centroids_in")
+        #self.centroids_in = tf.placeholder(tf.float32, shape=(self.k,self.dim), name="centroids_in")
         # tiled should be shape(self.n_pixels,self.k,5)
         tiled_pix = tf.tile(tf.expand_dims(self.arr,1),
-                            #multiples=[1,self.k,1], name="tiled_pix")
+                            multiples=[1,self.k,1], name="tiled_pix")
 
         def radical_euclidean_dist(x,y):
             """Takes in 2 tensors and returns euclidean distance radical, i.e. dist**2"""
@@ -89,12 +96,14 @@ class kmeans():
         # should be shape(self.k,5)
         self.centroids = tf.pack([tf.reduce_mean(cluster,0) for cluster in self.clusters],
             name="centroids_out")
+        self.update_roids = tf.assign(self.centroids_in, self.centroids)
 
 
-    def generate_image(self, round_id, roids, save=True):
-        centroids_rgb = roids[:,2:]
+    def generate_image(self, round_id, save=True):
+        centroids_rgb = self.centroids.eval()[:,2:]
         #centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
         #centroids_rgb = tf.to_int32(tf.slice(self.centroids,[0,2],[-1,-1])).eval()
+        #clusters = sesh.run(self.clusters)
         if save:
             addon = ('' if self.ratio == 1.0 else '_scaled')
             outfile = os.path.join(self.outdir, '{}_{}_k{}_{}{}.jpg'.\
