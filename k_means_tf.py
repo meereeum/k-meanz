@@ -35,12 +35,11 @@ class kmeans():
                 feed_dict = {self.centroids_in: centroids}
                 centroids = sesh.run(self.centroids, feed_dict)
                 print "round {} -->  centroids: {}".format(i,centroids)
-                print "other: ", self.centroids.eval()
-                #feed_dict = {self.centroids_in: centroids}
+                #print "other: ", self.centroids.eval()
                 if generate_all:
-                    self.generate_image(round_id=i)
+                    self.generate_image(round_id=i, roids=centroids)
                 if i==(rounds-1) and not generate_all: # final image only
-                    self.generate_image(round_id=i)
+                    self.generate_image(round_id=i, roids=centroids)
             #import code;code.interact(local=locals())
 
 
@@ -66,7 +65,7 @@ class kmeans():
                                      #[0,0],[self.k,-1]), name="centroids_in")
         self.centroids_in = tf.placeholder(tf.float32, shape=(self.k,self.dim), name="centroids_in")
         # tiled should be shape(self.n_pixels,self.k,5)
-        #tiled_pix = tf.tile(tf.expand_dims(self.arr,1),
+        tiled_pix = tf.tile(tf.expand_dims(self.arr,1),
                             #multiples=[1,self.k,1], name="tiled_pix")
 
         def radical_euclidean_dist(x,y):
@@ -75,27 +74,26 @@ class kmeans():
 
         # no need to take square root b/c positive reals and sqrt are isomorphic
         # should be shape(self.n_pixels, self.k)
-        #distances = tf.reduce_sum(radical_euclidean_dist(tiled_pix, self.centroids_in),
-                                  #reduction_indices=2, name="distances")
+        distances = tf.reduce_sum(radical_euclidean_dist(tiled_pix, self.centroids_in),
+                                  reduction_indices=2, name="distances")
         # should be shape(self.n_pixels)
-        #nearest = tf.to_int32(tf.argmin(distances,1), name="nearest")
+        nearest = tf.to_int32(tf.argmin(distances,1), name="nearest")
 
-        nearest = tf.to_int32(tf.argmin(tf.reduce_sum(
-            radical_euclidean_dist( tf.tile(tf.expand_dims(self.arr,1),
-                                           multiples=[1,self.k,1]),
-                                    self.centroids_in ), reduction_indices=2), 1))
+        #nearest = tf.to_int32(tf.argmin(tf.reduce_sum(
+            #radical_euclidean_dist( tf.tile(tf.expand_dims(self.arr,1),
+                                           #multiples=[1,self.k,1]),
+                                    #self.centroids_in ), reduction_indices=2), 1))
 
         # should be list of len self.k with tensors of shape(size_cluster, 5)
         self.clusters = tf.dynamic_partition(self.arr,nearest,self.k)
         # should be shape(self.k,5)
-        self.centroids = tf.reshape(
-            tf.concat(0,[tf.reduce_mean(cluster,0) for cluster in self.clusters]),
-            shape=(self.k,self.dim), name="centroids_out")
+        self.centroids = tf.pack([tf.reduce_mean(cluster,0) for cluster in self.clusters],
+            name="centroids_out")
 
 
-    def generate_image(self, round_id, save=True):
-        #centroids_rgb = np.int32(self.centroids.eval()[:,2:])
-        centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
+    def generate_image(self, round_id, roids, save=True):
+        centroids_rgb = roids[:,2:]
+        #centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
         #centroids_rgb = tf.to_int32(tf.slice(self.centroids,[0,2],[-1,-1])).eval()
         if save:
             addon = ('' if self.ratio == 1.0 else '_scaled')
@@ -118,7 +116,7 @@ class kmeans():
 
         def array_sort():
             to_concat = []
-            for centroid_rgb, cluster in itertools.izip(centroids_rgb,clusters):
+            for centroid_rgb, cluster in itertools.izip(centroids_rgb,self.clusters):
                 new_idxed_arr = tf.concat(1,[tf.slice(cluster,[0,0],[-1,2]), # no need to revisit ratio
                                             tf.tile(tf.expand_dims(tf.constant(centroid_rgb),0),
                                                 multiples=[len(cluster.eval()),1])])
@@ -143,4 +141,4 @@ if __name__=="__main__":
         INFILE = sys.argv[1]
     except(IndexError):
         INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-    kmeans(INFILE, outdir=OUTDIR, k=30, rounds=5, scale=True, generate_all=False)
+    kmeans(INFILE, outdir=OUTDIR, k=30, rounds=5, scale=True, generate_all=True)
