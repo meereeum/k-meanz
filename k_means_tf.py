@@ -24,24 +24,6 @@ class kmeans():
             print '\nimage shape = ({},{},{})'.format(self.m,self.n,self.chann)
             print 'pixels: {}\n'.format(self.n_pixels)
             self._build_graph()
-            #centroids = tf.slice(tf.random_shuffle(self.arr),[0,0],[self.k,-1]).eval()
-
-        #feed_dict = None # first round initialized with random centroids by tf node
-
-        # importantly - new sesh per round!
-        #for i in xrange(rounds):
-            #with tf.Session() as sesh:
-                #sesh.run(tf.initialize_all_variables())
-                #feed_dict = {self.centroids_in: centroids}
-                #centroids = sesh.run(self.centroids, feed_dict)
-                #print "round {} -->  centroids: {}".format(i,centroids)
-                #print "other: ", self.centroids.eval()
-                ##feed_dict = {self.centroids_in: centroids}
-                #if generate_all:
-                    #self.generate_image(round_id=i)
-                #if i==(rounds-1) and not generate_all: # final image only
-                    #self.generate_image(round_id=i)
-        with tf.Session() as sesh:
             sesh.run(tf.initialize_all_variables())
             for i in xrange(rounds):
                 self.update_roids.eval()
@@ -57,7 +39,6 @@ class kmeans():
         self.m, self.n, self.chann = tf.shape(pixels).eval()
         ratio = (255.0/max(self.m,self.n) if self.scale else 1.0) # rescale by max dimension
         self.ratio = tf.constant(ratio, dtype=tf.float32)
-        #idxs = tf.constant([(j*self.ratio,k*self.ratio) for j in xrange(m) for k in xrange(n)])
         idxs = tf.mul(self.ratio, tf.constant([(j,k) for j in xrange(self.m)
                                                for k in xrange(self.n)], dtype=tf.float32))
         self.arr = tf.concat(1, [idxs, tf.to_float(tf.reshape(pixels, shape=
@@ -70,7 +51,6 @@ class kmeans():
         # N.B. without tf.Variable, makes awesome glitchy clustered images
         self.centroids_in = tf.Variable(tf.slice(tf.random_shuffle(self.arr),
                                      [0,0],[self.k,-1]), name="centroids_in")
-        #self.centroids_in = tf.placeholder(tf.float32, shape=(self.k,self.dim), name="centroids_in")
         # tiled should be shape(self.n_pixels,self.k,5)
         tiled_pix = tf.tile(tf.expand_dims(self.arr,1),
                             multiples=[1,self.k,1], name="tiled_pix")
@@ -86,11 +66,6 @@ class kmeans():
         # should be shape(self.n_pixels)
         nearest = tf.to_int32(tf.argmin(distances,1), name="nearest")
 
-        #nearest = tf.to_int32(tf.argmin(tf.reduce_sum(
-            #radical_euclidean_dist( tf.tile(tf.expand_dims(self.arr,1),
-                                           #multiples=[1,self.k,1]),
-                                    #self.centroids_in ), reduction_indices=2), 1))
-
         # should be list of len self.k with tensors of shape(size_cluster, 5)
         self.clusters = tf.dynamic_partition(self.arr,nearest,self.k)
         # should be shape(self.k,5)
@@ -100,16 +75,13 @@ class kmeans():
 
 
     def generate_image(self, round_id, save=True):
-        centroids_rgb = self.centroids.eval()[:,2:]
-        #centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
-        #centroids_rgb = tf.to_int32(tf.slice(self.centroids,[0,2],[-1,-1])).eval()
-        #clusters = sesh.run(self.clusters)
+        #centroids_rgb = self.centroids.eval()[:,2:]
+        centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
         if save:
-            addon = ('' if self.ratio == 1.0 else '_scaled')
+            addon = ('_scaled' if self.scale else '')
             outfile = os.path.join(self.outdir, '{}_{}_k{}_{}{}.jpg'.\
                                 format(self.basename,self.now,self.k,round_id,addon))
         def array_put():
-            #new_arr = np.empty_like(self.pixels, dtype=np.uint8)
             new_arr = np.empty([self.m,self.n,self.chann], dtype=np.uint8)
             for centroid_rgb, cluster in itertools.izip(centroids_rgb,self.clusters):
                 #cluster_mn = np.int32(cluster.eval()[:,:2]/self.ratio)
@@ -134,12 +106,14 @@ class kmeans():
             #sorted_by_idx = np.sort(concated.eval())[:,2:]
             sorted_arr = np.array(sorted([list(arr) for arr in concated.eval()]), dtype=np.uint8)[:,2:]
             new_img = Image.fromarray(sorted_arr.reshape([self.m,self.n,self.chann]))
-            new_img.show()
             if save:
                 new_img.save(outfile, format='JPEG')
+                os.popen("open '{}'".format(outfile))
+            else:
+                new_img.show()
 
-        #array_sort()
-        array_put()
+        array_sort()
+        #array_put()
         print
 
 
@@ -150,4 +124,4 @@ if __name__=="__main__":
         INFILE = sys.argv[1]
     except(IndexError):
         INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-    kmeans(INFILE, outdir=OUTDIR, k=30, rounds=5, scale=True, generate_all=True)
+    kmeans(INFILE, outdir=OUTDIR, k=12, rounds=5, scale=False, generate_all=True)
