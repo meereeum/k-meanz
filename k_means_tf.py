@@ -8,6 +8,7 @@ import sys
 
 
 class kmeans():
+"""k-means clustering of image data using Google's TensorFlow"""
     def __init__(self, filepath, rounds=2, k=10, scale=False, generate_all=True, outdir=None):
         self.now = ''.join(c for c in str(datetime.datetime.today())
                            if c in '0123456789 ')[2:13].replace(' ','_') # YYMMDD_HHMM
@@ -112,8 +113,8 @@ class kmeans():
             else:
                 new_img.show()
 
-        array_sort()
-        #array_put()
+        #array_sort()
+        array_put()
         print
 
 
@@ -124,4 +125,4 @@ if __name__=="__main__":
         INFILE = sys.argv[1]
     except(IndexError):
         INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-    kmeans(INFILE, outdir=OUTDIR, k=12, rounds=5, scale=False, generate_all=True)
+    kmeans(INFILE, outdir=OUTDIR, k=50, rounds=5, scale=True, generate_all=True)
