@@ -47,28 +47,30 @@ class kmeans():
         self.img.show()
         self.k = k
         self.pixelMap = self.img.load()
-        #TODO: figure out how to sample from generator/iterable
-        #self.pixels_xy = [ (x,y) for x in xrange(self.img.size[0]) for y in xrange(self.img.size[1]) ]
-        #self.__initialize_k_dict__( random.sample( self.pixels_xy, self.k ) )
-        self.k_lst = [ (random.randint(0, self.img.size[0]-1), random.randint(0, self.img.size[1]-1)) \
-                       for _ in xrange(self.k) ]
-        # check to see that two random k points are not identical
-        while len(set(self.k_lst)) < self.k:
-            self.k_lst.append( (random.randint(0, self.img.size[0]-1), random.randint(0, self.img.size[1]-1)) )
-        self.__initialize_k_dict__(self.k_lst)
+        #TODO: figure out how to sample from generator ?
+        self.pixels_xy = [ (x,y) for x in xrange(self.img.size[0])
+                           for y in xrange(self.img.size[1]) ]
+        self.__initialize_k_dict__( random.sample( self.pixels_xy, self.k ) )
+        #self.k_lst = [ (random.randint(0, self.img.size[0]-1), random.randint(0, self.img.size[1]-1)) \
+                       #for _ in xrange(self.k) ]
+        ## check to see that two random k points are not identical
+        #while len(set(self.k_lst)) < self.k:
+            #self.k_lst.append( (random.randint(0, self.img.size[0]-1), random.randint(0, self.img.size[1]-1)) )
+        #self.__initialize_k_dict__(self.k_lst)
 
 
     def __initialize_k_dict__(self, k_vals):
         """Generate dictionary of k clusters based on list of (x,y) tuples for k means"""
         # Initialize k clusters with pixels in group, starting with points representing k clusters themselves
-        self.d_k_clusters = { self.xy2xyrgb(t_xy): [ self.xy2xyrgb(t_xy) ] for t_xy in k_vals }
+        self.d_k_clusters = { self.xy2xyrgb(t_xy): [ self.xy2xyrgb(t_xy) ]
+                              for t_xy in k_vals }
 
 
     def minimize_distance(self, pixel, metric):
         """Given tuple representing pixel in image, return k group that minimizes distance by given metric"""
         dists = [ (k, metric(pixel, k)) for k in self.d_k_clusters.iterkeys() ]
         # find tuple representing best k group by minimizing distance
-        best_k, _ = sorted( dists, key = lambda t: t[1] )[0]
+        best_k, _ = min( dists, key = lambda t: t[1] )
         return best_k
 
 
@@ -80,10 +82,12 @@ class kmeans():
     def assign_pixels(self, metric):
         """Assign all pixels in image to closest matching group in self.d_k_groups, according to given distance metric"""
         print 'assigning pixels'
-        for t in ( (x,y) for x in xrange(0, self.img.size[0]) for y in xrange(0, self.img.size[1]) ):
+        for t in ( (x,y) for x in xrange(0, self.img.size[0])
+                   for y in xrange(0, self.img.size[1]) ):
             # convert (x, y) of pixel location to ((x, y), (r, g, b))
             tval = self.xy2xyrgb(t)
-            # append to dictionary value list corresponding to key of k-mean that minimizes distance by given metric
+            # append to dictionary value list corresponding to key of k-mean
+            # that minimizes distance by given metric
             self.d_k_clusters[ self.minimize_distance( tval, metric ) ].append(tval)
 
 
@@ -124,7 +128,8 @@ def euclidean_dist(p1, p2):
     """Compute Euclidean distance between 2 pts of any (equal) dimensions
     IN: two iterables (tuples, lists)
     OUT: float"""
-    return sum( abs(x1-x2) for x1, x2 in izip(chain.from_iterable(p1), chain.from_iterable(p2)) )**0.5
+    return sum( abs(x1-x2) for x1, x2 in izip(chain.from_iterable(p1),
+                                              chain.from_iterable(p2)) )**0.5
 
 
 # inspired by http://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
@@ -167,7 +172,6 @@ def random_color_palette(n, RGB=True):
     return [ hsv2rgb((h, SATURATION, VALUE)) for h in l_hues ]
 
 
-#@profile
 def implement(infile, k, warholize=False):
     x = kmeans(infile, k=k)
     x.assign_pixels(metric=euclidean_dist)
