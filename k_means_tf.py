@@ -5,24 +5,25 @@ import itertools
 import os
 import datetime
 import sys
+import argparse
 
 
 class kmeans():
-"""k-means clustering of image data using Google's TensorFlow"""
-    def __init__(self, filepath, rounds=2, k=10, scale=False, generate_all=True, outdir=None):
+    """k-means clustering of image data using Google's TensorFlow"""
+    def __init__(self, filepath, rounds = 2, k = 10, scale = False,
+                 generate_all = True, outdir = None):
         self.now = ''.join(c for c in str(datetime.datetime.today())
                            if c in '0123456789 ')[2:13].replace(' ','_') # YYMMDD_HHMM
         self.k = k
         self.scale = scale
         self.filename = filepath
-        # default to parent directory of input
-        self.outdir = (os.path.dirname if not outdir else outdir)
+        self.outdir = (os.path.expanduser(outdir) if outdir else outdir)
         # basename sans extension
         self.basename = os.path.splitext(os.path.basename(filepath))[0]
 
         with tf.Session() as sesh:
             self._image_to_data()
-            print '\nimage shape = ({},{},{})'.format(self.m,self.n,self.chann)
+            print '\nimage shape = ({},{},{})'.format(self.m, self.n, self.chann)
             print 'pixels: {}\n'.format(self.n_pixels)
             self._build_graph()
             sesh.run(tf.initialize_all_variables())
@@ -34,6 +35,7 @@ class kmeans():
 
 
     def _image_to_data(self):
+        """Convert image to 1D array of image data: (m, n, R, G, B) per pixel"""
         with open(self.filename, 'rb') as f:
             img_str = f.read()
         pixels = tf.image.decode_jpeg(img_str)
@@ -56,11 +58,11 @@ class kmeans():
         tiled_pix = tf.tile(tf.expand_dims(self.arr,1),
                             multiples=[1,self.k,1], name="tiled_pix")
 
+        # no need to take square root b/c positive reals and sqrt are isomorphic
         def radical_euclidean_dist(x,y):
             """Takes in 2 tensors and returns euclidean distance radical, i.e. dist**2"""
             return tf.square(tf.sub(x,y))
 
-        # no need to take square root b/c positive reals and sqrt are isomorphic
         # should be shape(self.n_pixels, self.k)
         distances = tf.reduce_sum(radical_euclidean_dist(tiled_pix, self.centroids_in),
                                   reduction_indices=2, name="distances")
@@ -75,7 +77,7 @@ class kmeans():
         self.update_roids = tf.assign(self.centroids_in, self.centroids)
 
 
-    def generate_image(self, round_id, save=True):
+    def generate_image(self, round_id, save = True):
         #centroids_rgb = self.centroids.eval()[:,2:]
         centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
         if save:
@@ -83,6 +85,7 @@ class kmeans():
             outfile = os.path.join(self.outdir, '{}_{}_k{}_{}{}.jpg'.\
                                 format(self.basename,self.now,self.k,round_id,addon))
         def array_put():
+            """Generate new image array by putting (R,G,B) values in place for each pixel"""
             new_arr = np.empty([self.m,self.n,self.chann], dtype=np.uint8)
             for centroid_rgb, cluster in itertools.izip(centroids_rgb,self.clusters):
                 #cluster_mn = np.int32(cluster.eval()[:,:2]/self.ratio)
@@ -94,18 +97,23 @@ class kmeans():
             if save:
                 with open(outfile, 'w') as f:
                     f.write(new_img)
+                #import code; code.interact(local=locals())
                 os.popen("open '{}'".format(outfile))
 
         def array_sort():
+            """Generate new image array by sorting (m,n,R,G,B) values according to position (m,n),
+            then slicing down to (R,G,B) per pixel"""
             to_concat = []
             for centroid_rgb, cluster in itertools.izip(centroids_rgb,self.clusters):
-                new_idxed_arr = tf.concat(1,[tf.slice(cluster,[0,0],[-1,2]), # no need to revisit ratio
-                                            tf.tile(tf.expand_dims(tf.constant(centroid_rgb),0),
-                                                multiples=[len(cluster.eval()),1])])
+                # no need to revisit ratio
+                new_idxed_arr = tf.concat(1,[tf.slice(cluster,[0,0],[-1,2]),
+                                             tf.tile(tf.expand_dims(tf.constant(centroid_rgb),0),
+                                                     multiples=[len(cluster.eval()),1])])
                 to_concat.append(new_idxed_arr)
             concated = tf.concat(0,to_concat)
             #sorted_by_idx = np.sort(concated.eval())[:,2:]
-            sorted_arr = np.array(sorted([list(arr) for arr in concated.eval()]), dtype=np.uint8)[:,2:]
+            sorted_arr = np.array(sorted([list(arr) for arr in concated.eval()]),
+                                  dtype=np.uint8)[:,2:]
             new_img = Image.fromarray(sorted_arr.reshape([self.m,self.n,self.chann]))
             if save:
                 new_img.save(outfile, format='JPEG')
@@ -113,16 +121,53 @@ class kmeans():
             else:
                 new_img.show()
 
-        #array_sort()
-        array_put()
+        array_sort()
+        #array_put()
         print
 
 
 
+class setBool(argparse.Action):
+    """extends Action to enable parsing of `fuzzy` boolean user inputs"""
+    def __call__(self, parser, namespace, values, option_string=None):
+        fuzzy_true = ("yes", "true", "t", "1")
+        boolean = (values.lower() in fuzzy_true)
+        setattr(namespace, self.dest, boolean)
+
+
+
+def doWork():
+    parser = argparse.ArgumentParser()
+    DEFAULTS = {"k": 50,
+                "rounds": 5,
+                #"outdir": ".",
+                "outdir": "~/Downloads/kmeanz",
+                "scale": True,
+                "generate_all": False}
+
+    # positional args
+    parser.add_argument("input", help = "path/to/input/file")
+
+    # optional args
+    parser.add_argument("-k", "--k", type = int, default = DEFAULTS["k"],
+                        help = "number of centroids")
+    parser.add_argument("-r", "--rounds", type = int, default = DEFAULTS["rounds"],
+                        help = "number of rounds of clustering")
+    parser.add_argument("-o", "--outdir", default = DEFAULTS["outdir"],
+                        help = "path/to/output/directory")
+    parser.add_argument("-s", "--scale", default = DEFAULTS["scale"],
+                        help = "T/F: scale pixel location to be equitable with RGB vals?",
+                        action = setBool)
+    parser.add_argument("-g", "--generate_all", default = DEFAULTS["generate_all"],
+                        help = "T/F: generate image after each round? (slower)",
+                        action = setBool)
+
+    d_args = vars(parser.parse_args())
+    positional_args = [arg.dest for arg in parser._get_positional_actions()]
+    args = [d_args[k] for k in positional_args]
+    kwargs = {k: v for k,v in d_args.iteritems() if k not in positional_args}
+    kmeans(*args, **kwargs)
+
+
 if __name__=="__main__":
-    OUTDIR = '/Users/miriamshiffman/Downloads/kmeanz'
-    try:
-        INFILE = sys.argv[1]
-    except(IndexError):
-        INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-    kmeans(INFILE, outdir=OUTDIR, k=50, rounds=5, scale=True, generate_all=True)
+    doWork()
