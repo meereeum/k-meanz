@@ -1,12 +1,14 @@
-import numpy as np
-from PIL import Image
 import random
 import os
+from PIL import Image
+import numpy as np
+
+import argparser
 
 
 class kmeans():
-    def __init__(self, filepath, k=10, rounds=10, scale=False,
-                 generate_all=False, outdir=None):
+    def __init__(self, filepath, k = 10, rounds = 10, scale = False,
+                 generate_all = False, outdir = None):
         self.k = k
         if not outdir: # default to parent directory of input
             self.outdir = os.path.dirname(filepath)
@@ -75,7 +77,7 @@ class kmeans():
         return d_clusters
 
 
-    def generate_image(self, round_idx=-1, save=True):
+    def generate_image(self, round_idx = -1, save = True):
         """Generate new image by clustering pixels according to given centroids (defaulting to last round of clustering) and assiging centroid RGB to each cluster"""
         assert round_idx <= len(self.centroids_history)
         new_arr = np.empty_like(self.pixels, dtype=np.uint8)
@@ -96,7 +98,15 @@ class kmeans():
             new_img.save(outfile, format='JPEG')
 
 
+
+def doWork():
+    args, kwargs = argparser.parse_args()
+    kmeans(*args, **kwargs)
+
+
+
 if __name__ == "__main__":
-    INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-    #OUTDIR = '/Users/miriamshiffman/Downloads'
-    x = kmeans(filepath=INFILE, k=1000, rounds=5, generate_all=True)
+    #INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
+    ##OUTDIR = '/Users/miriamshiffman/Downloads'
+    #x = kmeans(filepath=INFILE, k=1000, rounds=5, generate_all=True)
+    doWork()
