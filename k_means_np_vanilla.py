@@ -1,5 +1,6 @@
 import random
 import os
+import datetime
 from PIL import Image
 import numpy as np
 
@@ -9,11 +10,15 @@ import argparser
 class kmeans():
     def __init__(self, filepath, k = 10, rounds = 10, scale = False,
                  generate_all = False, outdir = None):
+        self.now = ''.join(c for c in str(datetime.datetime.today())
+                           if c in '0123456789 ')[2:13].replace(' ','_') # YYMMDD_HHMM
         self.k = k
-        if not outdir: # default to parent directory of input
-            self.outdir = os.path.dirname(filepath)
+        self.scale = scale
+        self.filename = os.path.expanduser(filepath)
+        self.outdir = (os.path.expanduser(outdir) if outdir else outdir)
         # basename sans extension
         self.basename = os.path.splitext(os.path.basename(filepath))[0]
+
         img = Image.open(filepath)
         #img.show()
         # initialize pixel map = m x n array (row by column rather than x & y)
@@ -106,7 +111,4 @@ def doWork():
 
 
 if __name__ == "__main__":
-    #INFILE = '/Users/miriamshiffman/Downloads/536211-78101.jpg'
-    ##OUTDIR = '/Users/miriamshiffman/Downloads'
-    #x = kmeans(filepath=INFILE, k=1000, rounds=5, generate_all=True)
     doWork()
