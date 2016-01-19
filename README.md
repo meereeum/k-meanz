@@ -24,8 +24,8 @@ optional arguments:
 * -k, --k   number of centroids (default: 50)
 * -r, --rounds    number of rounds of clustering (default: 5)
 * -o, --outdir    path/to/output/directory (default: working dir)
-* -s, --scale   scale pixel location to be equitable to (within the same range as) RGB vals? [True/False] (default: T)
-* -g, --generate_all    generate image after each round? (slower) [True/False] (default: F)
+* -s, --scale   scale pixel location to be equitable to (within the same range as) RGB vals? \[True/False\] (default: T)
+* -g, --generate_all    generate image after each round? (slower) \[True/False\] (default: F)
 
 # e.g.
 
