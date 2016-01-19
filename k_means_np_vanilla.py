@@ -86,7 +86,7 @@ class kmeans():
         """Generate new image by clustering pixels according to given centroids (defaulting to last round of clustering) and assiging centroid RGB to each cluster"""
         assert round_idx <= len(self.centroids_history)
         new_arr = np.empty_like(self.pixels, dtype=np.uint8)
-        d_clusters = self.cluster(centroids=self.centroids_history[round_idx])
+        d_clusters = self.cluster(centroids = self.centroids_history[round_idx])
         for centroid, pixels in d_clusters.iteritems():
             centroid_rgb = [int(rgb) for rgb in centroid[-3:]]
             for pixel in pixels:
@@ -106,7 +106,6 @@ class kmeans():
 
 def doWork():
     args, kwargs = argparser.parse_args()
-    kmeans(*args, **kwargs)
 
 
 

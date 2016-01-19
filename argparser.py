@@ -40,5 +40,5 @@ def parse_args():
     positional_args = [arg.dest for arg in parser._get_positional_actions()]
     args = [d_args[k] for k in positional_args]
     kwargs = {k: v for k,v in d_args.iteritems() if k not in positional_args}
-    assert type((args,kwargs)) == tuple
+
     return (args, kwargs)
