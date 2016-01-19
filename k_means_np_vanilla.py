@@ -106,6 +106,7 @@ class kmeans():
 
 def doWork():
     args, kwargs = argparser.parse_args()
+    kmeans(*args, **kwargs)
 
 
 
