@@ -20,12 +20,12 @@ positional arguments:
 * path to input image jp(e)g
 
 optional arguments:
-* -h, --help    help message
-* -k, --k   number of centroids (default: 50)
-* -r, --rounds    number of rounds of clustering (default: 5)
-* -o, --outdir    path/to/output/directory (default: working dir)
-* -s, --scale   scale pixel location to be equitable to (within the same range as) RGB vals? \[True/False\] (default: T)
-* -g, --generate_all    generate image after each round? (slower) \[True/False\] (default: F)
+* -h, --help &nbsp;&nbsp;&nbsp;&nbsp; help message
+* -k, --k &nbsp;&nbsp;&nbsp;&nbsp; number of centroids (default: 50)
+* -r, --rounds &nbsp;&nbsp;&nbsp;&nbsp; number of rounds of clustering (default: 5)
+* -o, --outdir &nbsp;&nbsp;&nbsp;&nbsp; path/to/output/directory (default: ```.```)
+* -s, --scale &nbsp;&nbsp;&nbsp;&nbsp; scale pixel location to be equitable to (within the same range as) RGB vals? \[True/False\] (default: T)
+* -g, --generate_all &nbsp;&nbsp;&nbsp;&nbsp; generate image after each round? (slower) \[True/False\] (default: F)
 
 # e.g.
 
