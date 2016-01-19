@@ -1,5 +1,5 @@
-.project
-.pydevproject
-.pyc
-.lprof
+*.project
+*.pydevproject
+*.pyc
+*.lprof
 profiled
