@@ -46,4 +46,4 @@ optional arguments:
 
 k-means clustering is a method for data mining with no prior knowledge of data distribution but explicit number of classifications ("clusters"). In each round, pixels are partitioned by minimizing distance to the most similar cluster, based on Euclidean distance along 5 dimensions: location (x,y) and color (R,G,B). Centroid values are then updated by re-computing cluster averages. In order to generate clustered ("segmented") images, each pixel color value is determined by its centroid (mean cluster value).
 
-N.B. <b>k_means_tf.py</b> is the most efficient, but memory-intensive!
+N.B. ```k_means_tf.py``` is the most efficient, but memory-intensive!
