@@ -16,7 +16,7 @@ class kmeans():
                            if c in '0123456789 ')[2:13].replace(' ','_') # YYMMDD_HHMM
         self.k = k
         self.scale = scale
-        self.filename = filepath
+        self.filename = os.path.expanduser(filepath)
         self.outdir = (os.path.expanduser(outdir) if outdir else outdir)
         # basename sans extension
         self.basename = os.path.splitext(os.path.basename(filepath))[0]
