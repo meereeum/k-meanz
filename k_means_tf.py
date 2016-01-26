@@ -82,8 +82,9 @@ class kmeans():
         centroids_rgb = tf.div(tf.slice(self.centroids,[0,2],[-1,-1]), self.ratio).eval()
         if save:
             addon = ('_scaled' if self.scale else '')
-            outfile = os.path.join(self.outdir, '{}_{}_k{}_{}{}.jpg'.\
-                                format(self.basename,self.now,self.k,round_id,addon))
+            outfile = os.path.join(self.outdir, '{}_{}_k{}{}_{}.jpg'.\
+                                format(self.basename,self.now,self.k,addon,round_id))
+
         def array_put():
             """Generate new image array by putting (R,G,B) values in place for each pixel"""
             new_arr = np.empty([self.m,self.n,self.chann], dtype=np.uint8)
