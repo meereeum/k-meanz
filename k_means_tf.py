@@ -30,23 +30,20 @@ class kmeans():
 
             if save_roids:
                 addon = ('_scaled' if self.scale else '')
-                outfile_prefix = os.path.join(self.outdir, '{}_{}_k{}_{}{}'.format\
-                                    (self.basename, self.now, self.k, i, addon))
+                outfile_prefix = os.path.join(self.outdir, '{}_{}_k{}{}_init'.format\
+                                    (self.basename, self.now, self.k, addon))
 
-                rand_roids = tf.div(self.centroids, self.ratio).eval()
-                np.savetxt('{}.roids_init.txt'.format(outfile_prefix), roids)
+                rand_roids = tf.div(self.centroids_in, self.ratio).eval()
+                np.savetxt('{}.roids.txt'.format(outfile_prefix), rand_roids)
 
             for i in xrange(rounds):
                 self.update_roids.eval()
-                #print "round {} -->  centroids: {}".format(i,self.centroids.eval())
                 print "round {}".format(i)
 
                 if save_roids:
                     print "saving 'roid data..."
-
                     roids = tf.div(self.centroids, self.ratio).eval()
                     np.savetxt('{}.roids.txt'.format(outfile_prefix), roids)
-
                     cluster_size_arr = np.array([len(cluster.eval()) for cluster in self.clusters],
                                                 dtype=np.int32)
                     np.savetxt('{}.cluster_size.txt'.format(outfile_prefix), cluster_size_arr)
