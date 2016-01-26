@@ -10,11 +10,11 @@ Implemented in various combinations of:
 
 Clustering with Tensorflow...
 
-```>python k_means_tf.py <path/to/input> [-k K] [-r ROUNDS] [-o OUTDIR] [-s SCALE] [-g GENERATE_ALL]```
+```$ python k_means_tf.py <path/to/input> [-k K] [-r ROUNDS] [-o OUTDIR] [-s SCALE] [-g GENERATE_ALL]```
 
 Clustering with numpy...
 
-```>python k_means_np_vanilla.py <path/to/input> [-k K] [-r ROUNDS] [-o OUTDIR] [-s SCALE] [-g GENERATE_ALL]```
+```$ python k_means_np_vanilla.py <path/to/input> [-k K] [-r ROUNDS] [-o OUTDIR] [-s SCALE] [-g GENERATE_ALL]```
 
 positional arguments:
 * path to input image jp(e)g
@@ -29,16 +29,16 @@ optional arguments:
 
 # e.g.
 
-```>python k_means_tf.py ~/Downloads/erykah_badu.jpg -k10 -r5```
+```$ python k_means_tf.py ~/Downloads/erykah_badu.jpg -k10 -r5```
 <a data-flickr-embed="true"  href="https://www.flickr.com/photos/102397924@N07/24178107450/in/dateposted-public/" title="536211-78101_160103_0516_k10_0"><img src="https://farm2.staticflickr.com/1614/24178107450_60f51bb83b_b.jpg" width="650" height="650" alt="536211-78101_160103_0516_k10_0"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
 
-```>python k_means_tf.py ~/Downloads/erykah_badu.jpg -k10 -r5 -s False```
+```$ python k_means_tf.py ~/Downloads/erykah_badu.jpg -k10 -r5 -s False```
 <a data-flickr-embed="true"  href="https://www.flickr.com/photos/102397924@N07/24178583830/in/dateposted-public/" title="536211-78101_160119_0002_k10_4"><img src="https://farm2.staticflickr.com/1651/24178583830_c598f41e8a_b.jpg" width="650" height="650" alt="536211-78101_160119_0002_k10_4"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
 
-```>python k_means_tf.py ~/Downloads/erykah_badu.jpg -k50 -r5 -s False```
+```$ python k_means_tf.py ~/Downloads/erykah_badu.jpg -k50 -r5 -s False```
 <a data-flickr-embed="true"  href="https://www.flickr.com/photos/102397924@N07/24474140105/in/dateposted-public/" title="536211-78101_160118_1728_k50_4"><img src="https://farm2.staticflickr.com/1636/24474140105_bcce40ca4c_b.jpg" width="650" height="650" alt="536211-78101_160118_1728_k50_4"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
 
-```>python k_means_tf.py ~/Downloads/erykah_badu.jpg -k1000 -r3```
+```$ python k_means_tf.py ~/Downloads/erykah_badu.jpg -k1000 -r3```
 <a data-flickr-embed="true"  href="https://www.flickr.com/photos/102397924@N07/24473648725/in/dateposted-public/" title="536211-78101_kmeanz_3_k1000"><img src="https://farm2.staticflickr.com/1651/24473648725_a449105fcc_b.jpg" width="650" height="650" alt="536211-78101_kmeanz_3_k1000"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
 
 
