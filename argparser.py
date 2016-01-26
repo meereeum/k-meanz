@@ -14,8 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     DEFAULTS = {"k": 50,
                 "rounds": 5,
-                #"outdir": ".",
-                "outdir": "~/Downloads/kmeanz",
+                "outdir": ".",
                 "scale": True,
                 "generate_all": False}
 
