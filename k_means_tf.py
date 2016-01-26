@@ -78,8 +78,8 @@ class kmeans():
 
 
     def generate_image(self, round_id, save = True):
-        #centroids_rgb = self.centroids.eval()[:,2:]/self.ratio
-        centroids_rgb = tf.div(tf.slice(self.centroids,[0,2],[-1,-1]), self.ratio).eval()
+        #centroids_rgb = self.centroids.eval()[:,2:]
+        centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
         if save:
             addon = ('_scaled' if self.scale else '')
             outfile = os.path.join(self.outdir, '{}_{}_k{}{}_{}.jpg'.\
