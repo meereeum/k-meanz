@@ -24,17 +24,20 @@ def parse_args():
 
     # optional args
     parser.add_argument("-k", "--k", type = int, default = DEFAULTS["k"],
-                        help = "number of centroids")
+                        help = "number of centroids (default={})".\
+                        format(DEFAULTS["k"]))
     parser.add_argument("-r", "--rounds", type = int, default = DEFAULTS["rounds"],
-                        help = "number of rounds of clustering")
+                        help = "number of rounds of clustering (default={})".\
+                        format(DEFAULTS["rounds"]))
     parser.add_argument("-o", "--outdir", default = DEFAULTS["outdir"],
-                        help = "path/to/output/directory")
+                        help = "path/to/output/directory (default={})".\
+                        format(DEFAULTS["outdir"]))
     parser.add_argument("-s", "--scale", default = DEFAULTS["scale"],
-                        help = "T/F: scale pixel location to be equitable with RGB vals?",
-                        action = setBool)
+                        help = "T/F: scale pixel location to be equitable with RGB vals? \
+                        (default={})".format(DEFAULTS["scale"]), action = setBool)
     parser.add_argument("-g", "--generate_all", default = DEFAULTS["generate_all"],
-                        help = "T/F: generate image after each round? (slower)",
-                        action = setBool)
+                        help = "T/F: generate image after each round? (slower) \
+                        (default={})".format(DEFAULTS["generate_all"]), action = setBool)
 
     d_args = vars(parser.parse_args())
     positional_args = [arg.dest for arg in parser._get_positional_actions()]
