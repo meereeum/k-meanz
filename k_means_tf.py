@@ -93,27 +93,26 @@ class kmeans():
                                                 self.ratio))
                 for pixel in cluster_mn.eval():
                     new_arr[tuple(pixel)] = centroid_rgb
+
             new_img = tf.image.encode_jpeg(tf.constant(new_arr, dtype=tf.uint8)).eval()
             if save:
                 with open(outfile, 'w') as f:
                     f.write(new_img)
-                #import code; code.interact(local=locals())
                 os.popen("open '{}'".format(outfile))
 
         def array_sort():
             """Generate new image array by sorting (m,n,R,G,B) values according to position (m,n),
             then slicing down to (R,G,B) per pixel"""
             to_concat = []
-            for centroid_rgb, cluster in itertools.izip(centroids_rgb,self.clusters):
+            for centroid_rgb, cluster in itertools.izip(centroids_rgb, self.clusters):
                 # no need to revisit ratio
                 new_idxed_arr = tf.concat(1,[tf.slice(cluster,[0,0],[-1,2]),
                                              tf.tile(tf.expand_dims(tf.constant(centroid_rgb),0),
                                                      multiples=[len(cluster.eval()),1])])
                 to_concat.append(new_idxed_arr)
             concated = tf.concat(0,to_concat)
-            #sorted_by_idx = np.sort(concated.eval())[:,2:]
-            sorted_arr = np.array(sorted([list(arr) for arr in concated.eval()]),
-                                  dtype=np.uint8)[:,2:]
+            sorted_arr = np.array(sorted(concated.eval().tolist()), dtype=np.uint8)[:,2:]
+
             new_img = Image.fromarray(sorted_arr.reshape([self.m,self.n,self.chann]))
             if save:
                 new_img.save(outfile, format='JPEG')
