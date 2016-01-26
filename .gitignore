@@ -3,3 +3,4 @@
 *.pyc
 *.lprof
 profiled
+ipython
