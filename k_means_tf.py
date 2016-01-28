@@ -11,15 +11,19 @@ import argparser
 class kmeans():
     """k-means clustering of image data using Google's TensorFlow"""
     def __init__(self, filepath, rounds = 2, k = 10, scale = False,
-                 generate_all = True, outdir = None, save_roids = True):
+                 generate_all = True, outdir = None, datasaving = True):
         self.now = ''.join(c for c in str(datetime.datetime.today())
                            if c in '0123456789 ')[2:13].replace(' ','_') # YYMMDD_HHMM
         self.k = k
         self.scale = scale
         self.filename = os.path.expanduser(filepath)
-        self.outdir = (os.path.expanduser(outdir) if outdir else outdir)
         # basename sans extension
         self.basename = os.path.splitext(os.path.basename(filepath))[0]
+        if outdir:
+            self.outdir = os.path.expanduser(outdir)
+            addon = ('_scaled' if self.scale else '')
+            self.outfile_prefix = os.path.join(self.outdir, '{}_{}_k{}{}'.format\
+                                               (self.basename, self.now, self.k, addon))
 
         with tf.Session() as sesh:
             self._image_to_data()
@@ -28,26 +32,25 @@ class kmeans():
             self._build_graph()
             sesh.run(tf.initialize_all_variables())
 
-            if save_roids:
-                addon = ('_scaled' if self.scale else '')
-                outfile_prefix = os.path.join(self.outdir, '{}_{}_k{}{}'.format\
-                                    (self.basename, self.now, self.k, addon))
-
-                rand_roids = tf.div(self.centroids_in, self.ratio).eval()
-                np.savetxt('{}_init.roids.txt'.format(outfile_prefix), rand_roids)
+            if datasaving:
+                ratio = self.ratio.eval()
+                rand_roids = self.centroids_in.eval()
+                np.savetxt('{}.ratio.txt'.format(self.outfile_prefix), ratio)
+                np.savetxt('{}_init.roids.txt'.format(self.outfile_prefix), rand_roids)
 
             for i in xrange(rounds):
                 self.update_roids.eval()
-                print "round {}".format(i)
+                print "round {} !".format(i)
+                #print "round {} -->  centroids: {}".format(i,self.centroids.eval())
 
-                if save_roids:
+                if datasaving:
                     print "saving 'roid data..."
-                    roids = tf.div(self.centroids, self.ratio).eval()
-                    np.savetxt('{}_{}.roids.txt'.format(outfile_prefix, i), roids)
-                    cluster_size_arr = np.array([len(cluster.eval()) for cluster
+                    roids = self.centroids.eval()
+                    cluster_size = np.array([len(cluster.eval()) for cluster
                                                  in self.clusters], dtype=np.int32)
-                    np.savetxt('{}_{}.cluster_size.txt'.format(outfile_prefix, i),
-                               cluster_size_arr)
+                    np.savetxt('{}_{}.roids.txt'.format(self.outfile_prefix, i), roids)
+                    np.savetxt('{}_{}.cluster_size.txt'.format(self.outfile_prefix, i),
+                               cluster_size)
 
                 if generate_all or i==(rounds-1): # all or final image only
                     print "generating image..."
@@ -98,13 +101,10 @@ class kmeans():
 
 
     def generate_image(self, round_id, save = True):
+        if save:
+            outfile = '{}_{}.jpg'.format(outfile_prefix, round_id)
         #centroids_rgb = self.centroids.eval()[:,2:]
         centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
-
-        if save:
-            addon = ('_scaled' if self.scale else '')
-            outfile = os.path.join(self.outdir, '{}_{}_k{}_{}{}.jpg'.format\
-                                   (self.basename, self.now, self.k, round_id, addon))
 
         def array_put():
             """Generate new image array by putting (R,G,B) values in place for each pixel"""
@@ -128,14 +128,16 @@ class kmeans():
             to_concat = []
             for centroid_rgb, cluster in itertools.izip(centroids_rgb, self.clusters):
                 # no need to revisit ratio
-                new_idxed_arr = tf.concat(1,[tf.slice(cluster,[0,0],[-1,2]),
-                                             tf.tile(tf.expand_dims(tf.constant(centroid_rgb),0),
-                                                     multiples=[len(cluster.eval()),1])])
+                new_idxed_arr = tf.concat(1,[tf.slice(cluster, [0,0], [-1,2]),
+                                             tf.tile(tf.expand_dims(
+                                                 tf.constant(centroid_rgb), 0),
+                                                     multiples=[len(cluster.eval()), 1])])
                 to_concat.append(new_idxed_arr)
-            concated = tf.concat(0,to_concat)
+            concated = tf.concat(0, to_concat)
             #sorted_by_idx = np.sort(concated.eval())[:,2:]
             sorted_arr = np.array(sorted([list(arr) for arr in concated.eval()]),
                                   dtype=np.uint8)[:,2:]
+
             new_img = Image.fromarray(sorted_arr.reshape([self.m,self.n,self.chann]))
             if save:
                 new_img.save(outfile, format='JPEG')
