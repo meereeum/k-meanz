@@ -30,11 +30,11 @@ class kmeans():
 
             if save_roids:
                 addon = ('_scaled' if self.scale else '')
-                outfile_prefix = os.path.join(self.outdir, '{}_{}_k{}{}_init'.format\
+                outfile_prefix = os.path.join(self.outdir, '{}_{}_k{}{}'.format\
                                     (self.basename, self.now, self.k, addon))
 
                 rand_roids = tf.div(self.centroids_in, self.ratio).eval()
-                np.savetxt('{}.roids.txt'.format(outfile_prefix), rand_roids)
+                np.savetxt('{}_init.roids.txt'.format(outfile_prefix), rand_roids)
 
             for i in xrange(rounds):
                 self.update_roids.eval()
@@ -43,10 +43,11 @@ class kmeans():
                 if save_roids:
                     print "saving 'roid data..."
                     roids = tf.div(self.centroids, self.ratio).eval()
-                    np.savetxt('{}.roids.txt'.format(outfile_prefix), roids)
-                    cluster_size_arr = np.array([len(cluster.eval()) for cluster in self.clusters],
-                                                dtype=np.int32)
-                    np.savetxt('{}.cluster_size.txt'.format(outfile_prefix), cluster_size_arr)
+                    np.savetxt('{}_{}.roids.txt'.format(outfile_prefix, i), roids)
+                    cluster_size_arr = np.array([len(cluster.eval()) for cluster
+                                                 in self.clusters], dtype=np.int32)
+                    np.savetxt('{}_{}.cluster_size.txt'.format(outfile_prefix, i),
+                               cluster_size_arr)
 
                 if generate_all or i==(rounds-1): # all or final image only
                     print "generating image..."
@@ -98,7 +99,7 @@ class kmeans():
 
     def generate_image(self, round_id, save = True):
         #centroids_rgb = self.centroids.eval()[:,2:]
-        centroids_rgb = tf.div(tf.slice(self.centroids,[0,2],[-1,-1]), self.ratio).eval()
+        centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
 
         if save:
             addon = ('_scaled' if self.scale else '')
