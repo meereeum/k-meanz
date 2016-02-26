@@ -6,6 +6,8 @@ Implemented in various combinations of:
 * numpy
 * Google's [Tensorflow] (https://github.com/tensorflow/tensorflow)
 
+\+ visualize clustering [in action](https://meereeum.github.io/k-meanz)!
+
 # Usage
 
 Clustering with Tensorflow...
@@ -26,6 +28,7 @@ optional arguments:
 * -o, --outdir &nbsp;&nbsp;&nbsp;&nbsp; path/to/output/directory (default: ```.```)
 * -s, --scale &nbsp;&nbsp;&nbsp;&nbsp; scale pixel location to be equitable to (within the same range as) RGB vals? \[True/False\] (default: T)
 * -g, --generate_all &nbsp;&nbsp;&nbsp;&nbsp; generate image after each round? (slower) \[True/False\] (default: F)
+* -d, --data_saving &nbsp;&nbsp;&nbsp;&nbsp; save clustering data as .txt? (centroids, cluster sizes, dimensions) \[True/False\] (default: F)
 
 # e.g.
 
@@ -46,4 +49,4 @@ optional arguments:
 
 k-means clustering is a method for data mining with no prior knowledge of data distribution but explicit number of classifications ("clusters"). In each round, pixels are partitioned by minimizing distance to the most similar cluster, based on Euclidean distance along 5 dimensions: location (x,y) and color (R,G,B). Centroid values are then updated by re-computing cluster averages. In order to generate clustered ("segmented") images, each pixel color value is determined by its centroid (mean cluster value).
 
-N.B. ```k_means_tf.py``` is the most efficient, but memory-intensive!
+N.B. ```k_means_tf.py``` is the most efficient, but memory-intensive
