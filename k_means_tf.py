@@ -56,6 +56,13 @@ class kmeans():
                     print "generating image..."
                     self.generate_image(round_id=i)
 
+        if datasaving:
+            # cleanup
+            subprocess.call("cd {}".format(self.outdir))
+            subprocess.call("mkdir data imgs")
+            subprocess.call("mv *.txt data")
+            subprocess.call("mv *.jpg imgs")
+
 
     def _image_to_data(self):
         """Convert image to 1D array of image data: (m, n, R, G, B) per pixel"""
