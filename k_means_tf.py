@@ -33,9 +33,9 @@ class kmeans():
             sesh.run(tf.initialize_all_variables())
 
             if datasaving:
-                ratio = self.ratio.eval()
+                dims = np.array([self.m, self.n, self.ratio.eval()])
                 rand_roids = self.centroids_in.eval()
-                np.savetxt('{}.ratio.txt'.format(self.outfile_prefix), ratio)
+                np.savetxt('{}.dims.txt'.format(self.outfile_prefix), dims)
                 np.savetxt('{}_init.roids.txt'.format(self.outfile_prefix), rand_roids)
 
             for i in xrange(rounds):
