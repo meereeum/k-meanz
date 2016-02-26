@@ -3,4 +3,5 @@
 *.pyc
 *.lprof
 profiled
-ipython
+#ipython
+ipython/.ipynb_checkpoints
