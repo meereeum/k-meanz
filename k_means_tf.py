@@ -1,5 +1,6 @@
 import itertools
 import os
+import subprocess
 import datetime
 from PIL import Image
 import numpy as np
@@ -58,10 +59,10 @@ class kmeans():
 
         if datasaving:
             # cleanup
-            subprocess.call("cd {}".format(self.outdir))
-            subprocess.call("mkdir data imgs")
-            subprocess.call("mv *.txt data")
-            subprocess.call("mv *.jpg imgs")
+            subprocess.call(["cd", self.outdir])
+            subprocess.call(["mkdir","data","imgs"])
+            subprocess.call(["mv","*.txt","data"])
+            subprocess.call(["mv","*.jpg","imgs"])
 
 
     def _image_to_data(self):
