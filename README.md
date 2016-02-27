@@ -6,8 +6,10 @@ Implemented in various combinations of:
 * numpy
 * Google's [Tensorflow] (https://github.com/tensorflow/tensorflow)
 
-\+ visualize clustering [in action](https://meereeum.github.io/k-meanz)!
+\+ visualize clustering [in action](https://meereeum.github.io/k-meanz)!**
 (not firefox friendly)
+
+<sub>** HTML rendered from [raw](https://github.com/meereeum/k-meanz/blob/master/ipython/plotting_roids.ipynb) IPython notebook</sub>
 
 # Usage
 
