@@ -14,10 +14,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     DEFAULTS = {"k": 50,
                 "rounds": 5,
-                #"outdir": ".",
-                "outdir": "~/Downloads/kmeanz",
+                "outdir": ".",
                 "scale": True,
-                "generate_all": False}
+                "generate_all": False,
+                "data_saving": False}
 
     # positional args
     parser.add_argument("input", help = "path/to/input/file")
@@ -38,6 +38,10 @@ def parse_args():
     parser.add_argument("-g", "--generate_all", default = DEFAULTS["generate_all"],
                         help = "T/F: generate image after each round? (slower) \
                         (default={})".format(DEFAULTS["generate_all"]), action = setBool)
+    parser.add_argument("-d", "--data_saving", default = DEFAULTS["data_saving"],
+                        help = "T/F: save clustering data as .txt? \
+                        (centroids, cluster sizes, dimensions) (default={})".\
+                        format(DEFAULTS["data_saving"]), action = setBool)
 
     d_args = vars(parser.parse_args())
     positional_args = [arg.dest for arg in parser._get_positional_actions()]

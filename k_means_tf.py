@@ -12,7 +12,7 @@ import argparser
 class kmeans():
     """k-means clustering of image data using Google's TensorFlow"""
     def __init__(self, filepath, rounds = 2, k = 10, scale = False,
-                 generate_all = True, outdir = None, datasaving = True):
+                 generate_all = True, outdir = None, data_saving = True):
         self.now = ''.join(c for c in str(datetime.datetime.today())
                            if c in '0123456789 ')[2:13].replace(' ','_') # YYMMDD_HHMM
         self.k = k
@@ -33,7 +33,7 @@ class kmeans():
             self._build_graph()
             sesh.run(tf.initialize_all_variables())
 
-            if datasaving:
+            if data_saving:
                 dims = np.array([self.m, self.n, self.ratio.eval()])
                 rand_roids = self.centroids_in.eval()
                 np.savetxt('{}.dims.txt'.format(self.outfile_prefix), dims)
@@ -44,7 +44,7 @@ class kmeans():
                 print "round {} !".format(i)
                 #print "round {} -->  centroids: {}".format(i,self.centroids.eval())
 
-                if datasaving:
+                if data_saving:
                     print "saving 'roid data..."
                     roids = self.centroids.eval()
                     cluster_size = np.array([len(cluster.eval()) for cluster
@@ -57,7 +57,7 @@ class kmeans():
                     print "generating image..."
                     self.generate_image(round_id=i)
 
-        if datasaving:
+        if data_saving:
             # cleanup
             subprocess.call(["cd", self.outdir])
             subprocess.call(["mkdir","data","imgs"])
