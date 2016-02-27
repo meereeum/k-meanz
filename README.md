@@ -15,7 +15,7 @@ Implemented in various combinations of:
 
 Clustering with Tensorflow...
 
-```$ python k_means_tf.py <path/to/input> [-k K] [-r ROUNDS] [-o OUTDIR] [-s SCALE] [-g GENERATE_ALL]```
+```$ python k_means_tf.py <path/to/input> [-k K] [-r ROUNDS] [-o OUTDIR] [-s SCALE] [-g GENERATE_ALL] [-d DATA_SAVING]```
 
 Clustering with numpy...
 
