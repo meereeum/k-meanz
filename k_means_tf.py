@@ -141,10 +141,10 @@ class kmeans():
                                                  tf.constant(centroid_rgb), 0),
                                                      multiples=[len(cluster.eval()), 1])])
                 to_concat.append(new_idxed_arr)
+
             concated = tf.concat(0, to_concat)
             #sorted_by_idx = np.sort(concated.eval())[:,2:]
-            sorted_arr = np.array(sorted([list(arr) for arr in concated.eval()]),
-                                  dtype=np.uint8)[:,2:]
+            sorted_arr = np.array(sorted(concated.eval().tolist()), dtype=np.uint8)[:,2:]
 
             new_img = Image.fromarray(sorted_arr.reshape([self.m,self.n,self.chann]))
             if save:
