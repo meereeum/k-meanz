@@ -3,4 +3,7 @@
 *.pyc
 *.lprof
 profiled
-ipython
+#ipython
+ipython/.ipynb_checkpoints
+ipython/scratch.ipynb
+gh-pages
