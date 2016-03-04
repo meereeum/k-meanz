@@ -7,7 +7,7 @@ Implemented in various combinations of:
 * Google's [Tensorflow] (https://github.com/tensorflow/tensorflow)
 
 \+ visualize clustering [in action](https://meereeum.github.io/k-meanz)!**
-( safari-friendly but not firefox/chrome ): )
+( safari-friendly but not firefox/chrome/iceweasel ): )
 
 <sub>** HTML rendered from [raw](https://github.com/meereeum/k-meanz/blob/master/ipython/plotting_roids.ipynb) IPython notebook</sub>
 
