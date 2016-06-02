@@ -1,7 +1,9 @@
+from __future__ import division
+import datetime
 import itertools
 import os
 import subprocess
-import datetime
+
 from PIL import Image
 import numpy as np
 import tensorflow as tf
@@ -71,12 +73,12 @@ class kmeans():
             img_str = f.read()
         pixels = tf.image.decode_jpeg(img_str)
         self.m, self.n, self.chann = tf.shape(pixels).eval()
-        ratio = (255.0/max(self.m,self.n) if self.scale else 1.0) # rescale by max dimension
-        self.ratio = tf.constant(ratio, dtype=tf.float32)
-        idxs = tf.mul(self.ratio, tf.constant([(j,k) for j in xrange(self.m)
-                                               for k in xrange(self.n)], dtype=tf.float32))
+        self.ratio = (255. / max(self.m, self.n) if self.scale else 1.) # rescale by max dimension
+        #self.ratio = tf.constant(ratio, dtype=tf.float32)
+        idxs = self.ratio * tf.constant([(j,k) for j in xrange(self.m)
+                                         for k in xrange(self.n)], dtype=tf.float32)
         self.arr = tf.concat(1, [idxs, tf.to_float(tf.reshape(pixels, shape=
-                                                              (self.m*self.n,self.chann)))])
+                                                              (self.m * self.n, self.chann)))])
         self.n_pixels, self.dim = tf.shape(self.arr).eval() # i.e. m*n, chann + 2
 
 
@@ -84,15 +86,16 @@ class kmeans():
         """Construct tensorflow nodes for round of clustering"""
         # N.B. without tf.Variable, makes awesome glitchy clustered images
         self.centroids_in = tf.Variable(tf.slice(tf.random_shuffle(self.arr),
-                                     [0,0],[self.k,-1]), name="centroids_in")
-        # tiled should be shape(self.n_pixels,self.k,5)
-        tiled_pix = tf.tile(tf.expand_dims(self.arr,1),
-                            multiples=[1,self.k,1], name="tiled_pix")
+                                     [0, 0], [self.k, -1]), name="centroids_in")
+        # tiled should be shape(self.n_pixels, self.k, size_data = 2 + self.channels)
+        tiled_pix = tf.tile(tf.expand_dims(self.arr, 1),
+                            multiples=[1, self.k, 1], name="tiled_pix")
 
         # no need to take square root b/c positive reals and sqrt are isomorphic
-        def radical_euclidean_dist(x,y):
+        def radical_euclidean_dist(x, y):
             """Takes in 2 tensors and returns euclidean distance radical, i.e. dist**2"""
-            return tf.square(tf.sub(x,y))
+            with tf.name_scope("radical_euclidean"):
+                return tf.square(tf.sub(x, y))
 
         # should be shape(self.n_pixels, self.k)
         distances = tf.reduce_sum(radical_euclidean_dist(tiled_pix, self.centroids_in),
@@ -116,17 +119,16 @@ class kmeans():
 
         def array_put():
             """Generate new image array by putting (R,G,B) values in place for each pixel"""
-            new_arr = np.empty([self.m,self.n,self.chann], dtype=np.uint8)
+            new_arr = np.empty([self.m, self.n, self.chann], dtype=np.uint8)
             for centroid_rgb, cluster in itertools.izip(centroids_rgb, self.clusters):
-                #cluster_mn = np.int32(cluster.eval()[:,:2]/self.ratio)
-                cluster_mn = tf.to_int32(tf.div(tf.slice(cluster, [0,0], [-1,2]),
-                                                self.ratio))
+                #cluster_mn = np.int32(cluster.eval()[:, :2]/self.ratio)
+                cluster_mn = tf.to_int32(tf.slice(cluster, [0,0], [-1,2]) / self.ratio)
                 for pixel in cluster_mn.eval():
                     new_arr[tuple(pixel)] = centroid_rgb
 
             new_img = tf.image.encode_jpeg(tf.constant(new_arr, dtype=tf.uint8)).eval()
             if save:
-                with open(outfile, 'w') as f:
+                with open(outfile, "wb") as f:
                     f.write(new_img)
                 os.popen("open '{}'".format(outfile))
 
@@ -143,9 +145,9 @@ class kmeans():
                 to_concat.append(new_idxed_arr)
 
             concated = tf.concat(0, to_concat)
-            sorted_arr = np.array(sorted(concated.eval().tolist()), dtype=np.uint8)[:,2:]
+            sorted_arr = np.array(sorted(concated.eval().tolist()), dtype=np.uint8)[:, 2:]
 
-            new_img = Image.fromarray(sorted_arr.reshape([self.m,self.n,self.chann]))
+            new_img = Image.fromarray(sorted_arr.reshape([self.m, self.n, self.chann]))
             if save:
                 new_img.save(outfile, format='JPEG')
                 os.popen("open '{}'".format(outfile))
@@ -157,12 +159,10 @@ class kmeans():
         print
 
 
-
 def doWork():
     args, kwargs = argparser.parse_args()
     kmeans(*args, **kwargs)
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     doWork()
