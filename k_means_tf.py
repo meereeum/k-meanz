@@ -14,11 +14,17 @@ import argparser
 class kmeans():
     """k-means clustering of image data using Google's TensorFlow"""
     def __init__(self, filepath, rounds = 2, k = 10, scale = False,
-                 generate_all = True, outdir = None, data_saving = True):
+                 generate_all = True, outdir = None, data_saving = True,
+                 save_graph_def = False):
         self.now = ''.join(c for c in str(datetime.datetime.today())
                            if c in '0123456789 ')[2:13].replace(' ','_') # YYMMDD_HHMM
         self.k = k
         self.scale = scale
+
+        self.jpeg = (filepath.endswith("jpg") or filepath.endswith("jpeg"))
+        assert self.jpeg + filepath.endswith("png"), "Invalid image format!"
+
+
         self.filename = os.path.expanduser(filepath)
         # basename sans extension
         self.basename = os.path.splitext(os.path.basename(filepath))[0]
@@ -33,6 +39,12 @@ class kmeans():
             print '\nimage shape = ({},{},{})'.format(self.m, self.n, self.chann)
             print 'pixels: {}\n'.format(self.n_pixels)
             self._build_graph()
+
+            if save_graph_def:
+                logger = tf.train.SummaryWriter('.', sesh.graph)
+                logger.flush()
+                logger.close()
+
             sesh.run(tf.initialize_all_variables())
 
             if data_saving:
@@ -71,7 +83,8 @@ class kmeans():
         """Convert image to 1D array of image data: (m, n, R, G, B) per pixel"""
         with open(self.filename, 'rb') as f:
             img_str = f.read()
-        pixels = tf.image.decode_jpeg(img_str)
+        decoder = (tf.image.decode_jpeg if self.jpeg else tf.image.decode_png)
+        pixels = decoder(img_str)
         self.m, self.n, self.chann = tf.shape(pixels).eval()
         self.ratio = (255. / max(self.m, self.n) if self.scale else 1.) # rescale by max dimension
         #self.ratio = tf.constant(ratio, dtype=tf.float32)
@@ -103,17 +116,18 @@ class kmeans():
         # should be shape(self.n_pixels)
         nearest = tf.to_int32(tf.argmin(distances, 1), name="nearest")
 
-        # should be list of len self.k with tensors of shape(size_cluster, 5)
-        self.clusters = tf.dynamic_partition(self.arr,nearest,self.k)
-        # should be shape(self.k,5)
-        self.centroids = tf.pack([tf.reduce_mean(cluster,0) for cluster in self.clusters],
+        # should be list of len self.k with tensors of shape(size_cluster, size_data)
+        self.clusters = tf.dynamic_partition(self.arr, nearest, self.k)
+        # should be shape(self.k, size_data)
+        self.centroids = tf.pack([tf.reduce_mean(cluster, 0) for cluster in self.clusters],
             name="centroids_out")
         self.update_roids = tf.assign(self.centroids_in, self.centroids)
 
 
     def generate_image(self, round_id, save = True):
         if save:
-            outfile = '{}_{}.jpg'.format(outfile_prefix, round_id)
+            format_ = ("png", "jpeg")[int(self.jpeg)]
+            outfile = '{}_{}.{}'.format(self.outfile_prefix, round_id, format_)
         #centroids_rgb = self.centroids.eval()[:,2:]
         centroids_rgb = tf.slice(self.centroids,[0,2],[-1,-1]).eval()
 
@@ -126,7 +140,8 @@ class kmeans():
                 for pixel in cluster_mn.eval():
                     new_arr[tuple(pixel)] = centroid_rgb
 
-            new_img = tf.image.encode_jpeg(tf.constant(new_arr, dtype=tf.uint8)).eval()
+            encoder = (tf.image.encode_jpeg if self.jpeg else tf.image.encode_png)
+            new_img = encoder(tf.constant(new_arr, dtype=tf.uint8)).eval()
             if save:
                 with open(outfile, "wb") as f:
                     f.write(new_img)
@@ -149,7 +164,7 @@ class kmeans():
 
             new_img = Image.fromarray(sorted_arr.reshape([self.m, self.n, self.chann]))
             if save:
-                new_img.save(outfile, format='JPEG')
+                new_img.save(outfile, format=format_)
                 os.popen("open '{}'".format(outfile))
             else:
                 new_img.show()
