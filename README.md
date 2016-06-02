@@ -1,21 +1,21 @@
 # k-meanz
-k-means clustering of image data, pixel by pixel.
+_k_-means clustering of image data, pixel by pixel.
 
 Implemented in various combinations of:
 * PIL
 * numpy
-* Google's [Tensorflow] (https://github.com/tensorflow/tensorflow)
+* Google's [TensorFlow] (https://github.com/tensorflow/tensorflow)
 
 \+ visualize clustering [in action](https://meereeum.github.io/k-meanz)!**
-(not firefox friendly)
+( safari-friendly but not firefox/chrome/iceweasel ): )
 
 <sub>** HTML rendered from [raw](https://github.com/meereeum/k-meanz/blob/master/ipython/plotting_roids.ipynb) IPython notebook</sub>
 
 # Usage
 
-Clustering with Tensorflow...
+Clustering with TensorFlow...
 
-```$ python k_means_tf.py <path/to/input> [-k K] [-r ROUNDS] [-o OUTDIR] [-s SCALE] [-g GENERATE_ALL]```
+```$ python k_means_tf.py <path/to/input> [-k K] [-r ROUNDS] [-o OUTDIR] [-s SCALE] [-g GENERATE_ALL] [-d DATA_SAVING]```
 
 Clustering with numpy...
 
@@ -50,6 +50,6 @@ optional arguments:
 
 # "Go on..."
 
-k-means clustering is a method for data mining with no prior knowledge of data distribution but explicit number of classifications ("clusters"). In each round, pixels are partitioned by identifying the best matching cluster, based on Euclidean distance along 5 dimensions: location (x,y) and color (R,G,B). Centroids are then updated by re-computing cluster averages. In order to generate clustered/segmented images, each pixel color value is assigned based on its corresponding centroid color value.
+_k_-means clustering is a method for data mining with no prior knowledge of data distribution but explicit number of classifications ("clusters"). In each round, pixels are partitioned by identifying the best matching cluster, based on Euclidean distance along 5 dimensions: location (x,y) and color (R,G,B). Centroids are then updated by re-computing cluster averages. In order to generate clustered/segmented images, each pixel color value is assigned based on its corresponding centroid color value.
 
 N.B. ```k_means_tf.py``` is the most efficient, but memory-intensive
