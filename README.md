@@ -4,7 +4,7 @@ _k_-means clustering of image data, pixel by pixel.
 Implemented in various combinations of:
 * PIL
 * numpy
-* Google's [TensorFlow] (https://github.com/tensorflow/tensorflow)
+* Google's [TensorFlow](https://github.com/tensorflow/tensorflow)
 
 \+ visualize clustering [in action](https://meereeum.github.io/k-meanz)!**
 ( safari-friendly but not firefox/chrome/iceweasel ): )
